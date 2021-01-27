@@ -1,5 +1,8 @@
 package com.decision.agent;
 
+import com.decision.agent.classloader.DecisionClassLoader;
+import com.decision.core.common.DecisionPluginDefine;
+import com.decision.core.common.PluginInterceptPoint;
 import com.decision.core.util.DecisionUtils;
 import com.decision.core.util.LogbackUtils;
 import net.bytebuddy.agent.builder.AgentBuilder;
@@ -13,6 +16,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.lang.instrument.Instrumentation;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.jar.JarFile;
 
 /**
@@ -22,7 +27,7 @@ import java.util.jar.JarFile;
  * @Date 2021/1/20 15:46
  */
 public class AgentLauncher {
-    private final Logger logger = LoggerFactory.getLogger(AgentLauncher.class);
+    private static final Logger logger = LoggerFactory.getLogger(AgentLauncher.class);
 
     private static final String CORE_CONFIGURE_CLASS = "com.decision.core.CoreConfigure";
     private static final String CORE_LAUNCHER_CLASS = "com.decision.core.CoreLauncher";
@@ -33,21 +38,19 @@ public class AgentLauncher {
                 .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                 .with(buildListener())
                 .disableClassFormatChanges()
-                .ignore(ElementMatchers.<TypeDescription>none().and(ElementMatchers.nameStartsWith("net.beeapm.agent.")));
+                .ignore(ElementMatchers.<TypeDescription>none().and(ElementMatchers.nameStartsWith("com.decision.agent.")));
+        List<DecisionPluginDefine> plugins = loadPlugins();
         for (int i = 0; i < plugins.size(); i++) {
-            final AbstractPlugin plugin = plugins.get(i);
-            InterceptPoint[] interceptPoints = plugin.buildInterceptPoint();
+            final DecisionPluginDefine plugin = plugins.get(i);
+            PluginInterceptPoint[] interceptPoints = plugin.getInterceptPoint();
             for (int j = 0; j < interceptPoints.length; j++) {
-                final InterceptPoint interceptPoint = interceptPoints[j];
+                final PluginInterceptPoint interceptPoint = interceptPoints[j];
                 AgentBuilder.Transformer transformer = new AgentBuilder.Transformer() {
-                    private final ILog log = LogFactory.getLog("Transform");
-
                     @Override
                     public DynamicType.Builder<?> transform(DynamicType.Builder<?> builder,
                                                             TypeDescription typeDescription,
                                                             ClassLoader classLoader, JavaModule javaModule) {
                         String className = typeDescription.getName();
-                        log.exec("class-name={}, plugin-name={}", className, plugin.getName());
                         builder = builder.visit(Advice.to(plugin.interceptorAdviceClass()).on(interceptPoint.buildMethodsMatcher()));
                         FieldDefine[] fields = plugin.buildFieldDefine();
                         if (fields != null && fields.length > 0) {
@@ -71,21 +74,28 @@ public class AgentLauncher {
             inst.appendToBootstrapClassLoaderSearch(new JarFile(new File(getDecisionSpyJarPath(decisionHome))));
             //初始化日志框架
             LogbackUtils.init(getDecisionLogCfgPath(decisionHome));
-            //使用自定义classloader，尽量避免agent类影响业务系统
-            final DecisionClassLoader decisionClassLoader = new DecisionClassLoader(getDecisionCoreJarPath(decisionHome));
 
-            Class<?> classOfConfigure = decisionClassLoader.loadClass(CORE_CONFIGURE_CLASS);
-            Object instanceOfConfigure = classOfConfigure.getMethod("getInstance", String.class)
-                    .invoke(null, getDecisionPropertiesPath(decisionHome));
-            Class<?> classOfCoreLauncher = decisionClassLoader.loadClass(CORE_LAUNCHER_CLASS);
-            Object instanceOfCoreLauncher = classOfCoreLauncher.getMethod("getInstance").invoke(null);
-            classOfCoreLauncher.getMethod("init", classOfConfigure, Instrumentation.class)
-                    .invoke(instanceOfCoreLauncher, instanceOfConfigure, inst);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("init decision error :{}", e);
         }
 
+    }
+
+    private static List<DecisionPluginDefine> loadPlugins() {
+        List<DecisionPluginDefine> plugins = new ArrayList<DecisionPluginDefine>();
+        try {
+            String decisionHome = DecisionUtils.getDecisionHomePath();
+            //使用自定义classloader，尽量避免agent类影响业务系统
+            final DecisionClassLoader decisionClassLoader = new DecisionClassLoader(getDecisionCoreJarPath(decisionHome));
+            Class<?> classOfCoreLauncher = decisionClassLoader.loadClass(CORE_LAUNCHER_CLASS);
+            Object instanceOfCoreLauncher = classOfCoreLauncher.getMethod("getInstance").invoke(null);
+            plugins = (List<DecisionPluginDefine>) classOfCoreLauncher.getMethod("loadPlugins", String.class)
+                    .invoke(instanceOfCoreLauncher, getDecisionPluginJarPath(decisionHome));
+        } catch (Exception e) {
+            logger.error("load plugin error :{}", e);
+        }
+        return plugins;
     }
 
     private static AgentBuilder.Listener buildListener() {
@@ -98,7 +108,6 @@ public class AgentLauncher {
 
             @Override
             public void onTransformation(TypeDescription typeDescription, ClassLoader classLoader, JavaModule javaModule, boolean b, DynamicType dynamicType) {
-                WeavingClassLog.INSTANCE.log(typeDescription, dynamicType);
             }
 
             @Override
@@ -107,7 +116,7 @@ public class AgentLauncher {
 
             @Override
             public void onError(String s, ClassLoader classLoader, JavaModule javaModule, boolean b, Throwable throwable) {
-                log.error("", throwable);
+                logger.error("", throwable);
             }
 
             @Override
@@ -129,9 +138,6 @@ public class AgentLauncher {
         return decisionHome + File.separatorChar + "decision.properties";
     }
 
-    private static String getDecisionModulePath(String decisionHome) {
-        return decisionHome + File.separatorChar + "module";
-    }
 
     private static String getDecisionCoreJarPath(String decisionHome) {
         return decisionHome + File.separatorChar + "lib" + File.separator + "decision-core.jar";
@@ -139,6 +145,10 @@ public class AgentLauncher {
 
     private static String getDecisionSpyJarPath(String decisionHome) {
         return decisionHome + File.separatorChar + "lib" + File.separator + "decision-spy.jar";
+    }
+
+    private static String getDecisionPluginJarPath(String decisionHome) {
+        return decisionHome + File.separatorChar + "plugin";
     }
 
 }

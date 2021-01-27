@@ -1,7 +1,7 @@
 package com.decision.core;
 
 import com.decision.core.classloader.PluginJarClassLoader;
-import com.decision.core.common.DecisionPlugin;
+import com.decision.core.common.DecisionPluginDefine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +35,7 @@ public class CorePlugin {
     /**
      * 插件
      */
-    private final DecisionPlugin plugin;
+    private final DecisionPluginDefine plugin;
 
 
     /**
@@ -54,7 +54,7 @@ public class CorePlugin {
     public CorePlugin(final String uniqueId,
                       final File jarFile,
                       final PluginJarClassLoader loader,
-                      final DecisionPlugin plugin) {
+                      final DecisionPluginDefine plugin) {
         this.uniqueId = uniqueId;
         this.jarFile = jarFile;
         this.loader = loader;
@@ -115,7 +115,7 @@ public class CorePlugin {
      *
      * @return 插件实例
      */
-    public DecisionPlugin getPlugin() {
+    public DecisionPluginDefine getPlugin() {
         return plugin;
     }
 

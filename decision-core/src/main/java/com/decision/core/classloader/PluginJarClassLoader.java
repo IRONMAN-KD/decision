@@ -120,7 +120,7 @@ public class PluginJarClassLoader extends URLClassLoader {
          * @param classLoader       目标ClassLoader
          * @param regexExpressArray 匹配规则表达式数组
          */
-        Routing(final ClassLoader classLoader, final String... regexExpressArray) {
+        public Routing(final ClassLoader classLoader, final String... regexExpressArray) {
             if (ArrayUtils.isNotEmpty(regexExpressArray)) {
                 regexExpresses.addAll(Arrays.asList(regexExpressArray));
             }

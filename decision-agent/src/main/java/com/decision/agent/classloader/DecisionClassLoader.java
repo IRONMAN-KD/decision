@@ -1,4 +1,4 @@
-package com.decision.agent;
+package com.decision.agent.classloader;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -17,9 +17,9 @@ class DecisionClassLoader extends URLClassLoader {
     private final String toString;
     private final String path;
 
-    DecisionClassLoader(final String decisionCoreJarFilePath) throws MalformedURLException {
-        super(new URL[]{new URL("file:" + decisionCoreJarFilePath)});
-        this.path = decisionCoreJarFilePath;
+    DecisionClassLoader(final String decisionFilePath) throws MalformedURLException {
+        super(new URL[]{new URL("file:" + decisionFilePath)});
+        this.path = decisionFilePath;
         this.toString = String.format("DecisionClassLoader[path=%s;]", path);
     }
 

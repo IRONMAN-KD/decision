@@ -1,14 +1,15 @@
 package com.decision.core.manager.loader;
 
+import com.decision.core.CorePlugin;
 import com.decision.core.classloader.PluginJarClassLoader;
 import com.decision.core.common.DecisionPlugin;
-import com.decision.core.common.Information;
-import org.apache.commons.lang3.ArrayUtils;
+import com.decision.core.common.DecisionPluginDefine;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,8 +26,10 @@ import static org.apache.commons.lang3.StringUtils.join;
 public class PluginLoader {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final File pluginLibDir;
-    // 已加载的插件集合
-    private final Map<String, CoreModule> loadedModuleBOMap = new ConcurrentHashMap<String, CoreModule>();
+    /**
+     * 已加载的插件集合
+     */
+    private final Map<String, CorePlugin> loadedPluginBOMap = new ConcurrentHashMap<String, CorePlugin>();
 
     public PluginLoader(File pluginLibDir) {
         this.pluginLibDir = pluginLibDir;
@@ -59,20 +62,26 @@ public class PluginLoader {
         return pluginJarFileArray;
     }
 
-    public void load(){
-        try{
+    public Map<String, CorePlugin> load() {
+        try {
             for (File pluginJarFile : listPluginJarFileInLib()) {
                 boolean hasModuleLoadedSuccessFlag = false;
                 PluginJarClassLoader pluginJarClassLoader = null;
                 logger.info("prepare loading plugin-jar={};", pluginJarFile);
                 try {
-                    pluginJarClassLoader = new PluginJarClassLoader(pluginJarFile);
+                    pluginJarClassLoader = new PluginJarClassLoader(new URL[]{new URL("file:" + pluginJarFile.getPath())},
+                            new PluginJarClassLoader.Routing(
+                                    PluginJarClassLoader.class.getClassLoader(),
+                                    "^com\\.decision\\.core\\..*",
+                                    "^javax\\.servlet\\..*",
+                                    "^javax\\.annotation\\.Resource.*$"
+                            ));
 
                     final ClassLoader preTCL = Thread.currentThread().getContextClassLoader();
                     Thread.currentThread().setContextClassLoader(pluginJarClassLoader);
 
                     try {
-                        hasModuleLoadedSuccessFlag = loadingPlugins(pluginJarClassLoader,pluginJarFile);
+                        hasModuleLoadedSuccessFlag = loadingPlugins(pluginJarClassLoader, pluginJarFile);
                     } finally {
                         Thread.currentThread().setContextClassLoader(preTCL);
                     }
@@ -80,24 +89,25 @@ public class PluginLoader {
                 } finally {
                     if (!hasModuleLoadedSuccessFlag
                             && null != pluginJarClassLoader) {
-                        logger.warn("loading module-jar completed, but NONE module loaded, will be close ModuleJarClassLoader. module-jar={};", moduleJarFile);
+                        logger.warn("loading plugin-jar completed, but NONE module loaded, will be close ModuleJarClassLoader. module-jar={};", moduleJarFile);
                         pluginJarClassLoader.close();
                     }
                 }
             }
-        }catch (Throwable t){
+        } catch (Throwable t) {
             logger.error("loading plugin-jar  error! plugin-jar={};", pluginLibDir, t);
         }
-
+        return loadedPluginBOMap;
     }
-    private boolean loadingPlugins(final PluginJarClassLoader pluginClassLoader,final File pluginJarFile) {
 
-        final Set<String> loadedModuleUniqueIds = new LinkedHashSet<String>();
-        final ServiceLoader<DecisionPlugin> moduleServiceLoader = ServiceLoader.load(DecisionPlugin.class, pluginClassLoader);
-        final Iterator<DecisionPlugin> pluginIt = moduleServiceLoader.iterator();
+    private boolean loadingPlugins(final PluginJarClassLoader pluginClassLoader, final File pluginJarFile) {
+
+        final Set<String> loadedPluginUniqueIds = new LinkedHashSet<String>();
+        final ServiceLoader<DecisionPluginDefine> moduleServiceLoader = ServiceLoader.load(DecisionPluginDefine.class, pluginClassLoader);
+        final Iterator<DecisionPluginDefine> pluginIt = moduleServiceLoader.iterator();
         while (pluginIt.hasNext()) {
 
-            final DecisionPlugin plugin;
+            final DecisionPluginDefine plugin;
             try {
                 plugin = pluginIt.next();
             } catch (Throwable cause) {
@@ -105,24 +115,23 @@ public class PluginLoader {
                 continue;
             }
 
-            final Class<?> classOfModule = plugin.getClass();
+            final Class<?> classOfPlugin = plugin.getClass();
 
-            // 判断插件是否实现了@Information标记
-            if (!classOfModule.isAnnotationPresent(Information.class)) {
-                logger.warn("loading decisionPlugin instance failed: not implements @Information, will be ignored. class={};plugin-jar={};",
-                        classOfModule,
+            if (!classOfPlugin.isAnnotationPresent(DecisionPlugin.class)) {
+                logger.warn("loading decisionPlugin instance failed: not implements @DecisionPlugin, will be ignored. class={};plugin-jar={};",
+                        classOfPlugin,
                         pluginJarFile
                 );
                 continue;
             }
 
-            final Information info = classOfModule.getAnnotation(Information.class);
+            final DecisionPlugin info = classOfPlugin.getAnnotation(DecisionPlugin.class);
             final String uniqueId = info.id();
 
             // 判断插件ID是否合法
             if (StringUtils.isBlank(uniqueId)) {
-                logger.warn("loading decisionPlugin instance failed: @Information.id is missing, will be ignored. class={};plugin-jar={};",
-                        classOfModule,
+                logger.warn("loading decisionPlugin instance failed: @DecisionPlugin.id is missing, will be ignored. class={};plugin-jar={};",
+                        classOfPlugin,
                         pluginJarFile
                 );
                 continue;
@@ -130,65 +139,51 @@ public class PluginLoader {
 
 
             try {
-                onLoad(uniqueId, classOfModule, plugin, pluginJarFile, pluginClassLoader);
+                onLoad(uniqueId, plugin, pluginJarFile, pluginClassLoader);
             } catch (Throwable cause) {
                 logger.warn("loading plugin instance failed: will be ignored. plugin={};class={};plugin-jar={};",
                         uniqueId,
-                        classOfModule,
+                        classOfPlugin,
                         pluginJarFile,
                         cause
                 );
                 continue;
             }
 
-            loadedModuleUniqueIds.add(uniqueId);
+            loadedPluginUniqueIds.add(uniqueId);
 
         }
 
-
         logger.info("loaded plugin-jar completed, loaded {} module in plugin-jar={}, modules={}",
-                loadedModuleUniqueIds.size(),
+                loadedPluginUniqueIds.size(),
                 pluginJarFile,
-                loadedModuleUniqueIds
+                loadedPluginUniqueIds
         );
-        return !loadedModuleUniqueIds.isEmpty();
+        return !loadedPluginUniqueIds.isEmpty();
     }
 
     public void onLoad(final String uniqueId,
-                       final Class pluginClass,
-                       final DecisionPlugin plugin,
+                       final DecisionPluginDefine plugin,
                        final File pluginJarFile,
                        final PluginJarClassLoader pluginClassLoader) throws Throwable {
 
         // 如果之前已经加载过了相同ID的插件，则放弃当前插件的加载
-        if (loadedModuleBOMap.containsKey(uniqueId)) {
-            final CoreModule existedCoreModule = get(uniqueId);
-            logger.info("IMLCB: module already loaded, ignore load this module. expected:module={};class={};loader={}|existed:class={};loader={};",
-                    uniqueId,
-                    moduleClass, moduleClassLoader,
-                    existedCoreModule.getModule().getClass().getName(),
-                    existedCoreModule.getLoader()
-            );
+        if (loadedPluginBOMap.containsKey(uniqueId)) {
+            logger.debug("plugin already loaded. module={};", uniqueId);
             return;
         }
 
-        // 需要经过ModuleLoadingChain的过滤
-        providerManager.loading(
+        logger.info("plugin module, plugin={};class={};plugin-jar={};",
                 uniqueId,
-                moduleClass,
-                module,
-                moduleJarFile,
-                moduleClassLoader
+                plugin.getClass().getName(),
+                pluginJarFile
         );
+        // 初始化插件信息
+        final CorePlugin corePlugin = new CorePlugin(uniqueId, pluginJarFile, pluginClassLoader, plugin);
+        // 设置为已经加载
+        corePlugin.markLoaded(true);
+        // 注册到插件列表中
+        loadedPluginBOMap.put(uniqueId, corePlugin);
 
-        // 之前没有加载过，这里进行加载
-        logger.info("IMLCB: found new module, prepare to load. module={};class={};loader={};",
-                uniqueId,
-                moduleClass,
-                moduleClassLoader
-        );
-
-        // 这里进行真正的插件加载
-        load(uniqueId, module, moduleJarFile, moduleClassLoader);
     }
 }
