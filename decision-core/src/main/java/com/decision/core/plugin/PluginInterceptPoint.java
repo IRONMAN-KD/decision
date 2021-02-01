@@ -1,4 +1,4 @@
-package com.decision.core.common;
+package com.decision.core.plugin;
 
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;

@@ -1,15 +1,13 @@
 package com.decision.core.manager.loader;
 
-import com.decision.core.CorePlugin;
-import com.decision.core.classloader.PluginJarClassLoader;
-import com.decision.core.common.DecisionPlugin;
-import com.decision.core.common.DecisionPluginDefine;
+import com.decision.core.classloader.DecisionClassLoader;
+import com.decision.core.plugin.AbstractDecisionPluginDefine;
+import com.decision.core.plugin.DecisionPlugin;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,7 +27,8 @@ public class PluginLoader {
     /**
      * 已加载的插件集合
      */
-    private final Map<String, CorePlugin> loadedPluginBOMap = new ConcurrentHashMap<String, CorePlugin>();
+    private final Map<String, AbstractDecisionPluginDefine> loadedPluginBOMap = new ConcurrentHashMap<String, AbstractDecisionPluginDefine>();
+    private final List<AbstractDecisionPluginDefine> loadedPluginList = new ArrayList<AbstractDecisionPluginDefine>();
 
     public PluginLoader(File pluginLibDir) {
         this.pluginLibDir = pluginLibDir;
@@ -54,7 +53,7 @@ public class PluginLoader {
     private File[] listPluginJarFileInLib() {
         final File[] pluginJarFileArray = toPluginJarFileArray();
         Arrays.sort(pluginJarFileArray);
-        logger.info("loading plugin-lib={}, found {} plugin-jar files : {}",
+        logger.info("加载插件 plugin-lib={}, 找到插件 {} plugin-jar files : {}",
                 pluginLibDir,
                 pluginJarFileArray.length,
                 join(pluginJarFileArray, ",")
@@ -62,63 +61,59 @@ public class PluginLoader {
         return pluginJarFileArray;
     }
 
-    public Map<String, CorePlugin> load() {
+    public List<AbstractDecisionPluginDefine> load() {
         try {
             for (File pluginJarFile : listPluginJarFileInLib()) {
-                boolean hasModuleLoadedSuccessFlag = false;
-                PluginJarClassLoader pluginJarClassLoader = null;
-                logger.info("prepare loading plugin-jar={};", pluginJarFile);
+                boolean hasPluginLoadedSuccessFlag = false;
+                DecisionClassLoader pluginJarClassLoader = null;
+                logger.info("准备加载插件 plugin-jar={};", pluginJarFile);
                 try {
-                    pluginJarClassLoader = new PluginJarClassLoader(new URL[]{new URL("file:" + pluginJarFile.getPath())},
-                            new PluginJarClassLoader.Routing(
-                                    PluginJarClassLoader.class.getClassLoader(),
-                                    "^com\\.decision\\.core\\..*",
-                                    "^javax\\.servlet\\..*",
-                                    "^javax\\.annotation\\.Resource.*$"
-                            ));
+                    pluginJarClassLoader = new DecisionClassLoader(pluginJarFile.getPath());
 
                     final ClassLoader preTCL = Thread.currentThread().getContextClassLoader();
                     Thread.currentThread().setContextClassLoader(pluginJarClassLoader);
 
                     try {
-                        hasModuleLoadedSuccessFlag = loadingPlugins(pluginJarClassLoader, pluginJarFile);
+                        hasPluginLoadedSuccessFlag = loadingPlugins(pluginJarClassLoader, pluginJarFile);
                     } finally {
                         Thread.currentThread().setContextClassLoader(preTCL);
                     }
 
                 } finally {
-                    if (!hasModuleLoadedSuccessFlag
+                    if (!hasPluginLoadedSuccessFlag
                             && null != pluginJarClassLoader) {
-                        logger.warn("loading plugin-jar completed, but NONE module loaded, will be close ModuleJarClassLoader. module-jar={};", moduleJarFile);
-                        pluginJarClassLoader.close();
+                        logger.warn("加载已完成，但没有加载到插件，plugin-jar={};", pluginJarFile);
                     }
                 }
             }
         } catch (Throwable t) {
-            logger.error("loading plugin-jar  error! plugin-jar={};", pluginLibDir, t);
+            logger.error("加载插件失败! plugin-jar={};", pluginLibDir, t);
         }
-        return loadedPluginBOMap;
+        for (Map.Entry<String, AbstractDecisionPluginDefine> entry : loadedPluginBOMap.entrySet()) {
+            loadedPluginList.add(entry.getValue());
+        }
+        return loadedPluginList;
     }
 
-    private boolean loadingPlugins(final PluginJarClassLoader pluginClassLoader, final File pluginJarFile) {
+    private boolean loadingPlugins(final DecisionClassLoader pluginClassLoader, final File pluginJarFile) {
 
         final Set<String> loadedPluginUniqueIds = new LinkedHashSet<String>();
-        final ServiceLoader<DecisionPluginDefine> moduleServiceLoader = ServiceLoader.load(DecisionPluginDefine.class, pluginClassLoader);
-        final Iterator<DecisionPluginDefine> pluginIt = moduleServiceLoader.iterator();
+        final ServiceLoader<AbstractDecisionPluginDefine> pluginServiceLoader = ServiceLoader.load(AbstractDecisionPluginDefine.class, pluginClassLoader);
+        final Iterator<AbstractDecisionPluginDefine> pluginIt = pluginServiceLoader.iterator();
         while (pluginIt.hasNext()) {
 
-            final DecisionPluginDefine plugin;
+            final AbstractDecisionPluginDefine plugin;
             try {
                 plugin = pluginIt.next();
             } catch (Throwable cause) {
-                logger.warn("loading decisionPlugin instance failed: instance occur error, will be ignored. plugin-jar={}", pluginJarFile, cause);
+                logger.warn("加载插件实例出错，将跳过该实例, plugin-jar={}", pluginJarFile, cause);
                 continue;
             }
 
             final Class<?> classOfPlugin = plugin.getClass();
 
             if (!classOfPlugin.isAnnotationPresent(DecisionPlugin.class)) {
-                logger.warn("loading decisionPlugin instance failed: not implements @DecisionPlugin, will be ignored. class={};plugin-jar={};",
+                logger.warn("加载插件实例出错: 没有使用@DecisionPlugin注解, 跳过该实例. class={};plugin-jar={};",
                         classOfPlugin,
                         pluginJarFile
                 );
@@ -130,7 +125,7 @@ public class PluginLoader {
 
             // 判断插件ID是否合法
             if (StringUtils.isBlank(uniqueId)) {
-                logger.warn("loading decisionPlugin instance failed: @DecisionPlugin.id is missing, will be ignored. class={};plugin-jar={};",
+                logger.warn("加载插件实例出错: @DecisionPlugin.id 未配置, 跳过该实例. class={};plugin-jar={};",
                         classOfPlugin,
                         pluginJarFile
                 );
@@ -141,7 +136,7 @@ public class PluginLoader {
             try {
                 onLoad(uniqueId, plugin, pluginJarFile, pluginClassLoader);
             } catch (Throwable cause) {
-                logger.warn("loading plugin instance failed: will be ignored. plugin={};class={};plugin-jar={};",
+                logger.warn("加载插件实例出错: 跳过该实例. plugin={};class={};plugin-jar={};",
                         uniqueId,
                         classOfPlugin,
                         pluginJarFile,
@@ -154,7 +149,7 @@ public class PluginLoader {
 
         }
 
-        logger.info("loaded plugin-jar completed, loaded {} module in plugin-jar={}, modules={}",
+        logger.info("插件加载完成, loaded {} plugin in plugin-jar={}, plugins={}",
                 loadedPluginUniqueIds.size(),
                 pluginJarFile,
                 loadedPluginUniqueIds
@@ -163,13 +158,13 @@ public class PluginLoader {
     }
 
     public void onLoad(final String uniqueId,
-                       final DecisionPluginDefine plugin,
+                       final AbstractDecisionPluginDefine plugin,
                        final File pluginJarFile,
-                       final PluginJarClassLoader pluginClassLoader) throws Throwable {
+                       final DecisionClassLoader pluginClassLoader) throws Throwable {
 
         // 如果之前已经加载过了相同ID的插件，则放弃当前插件的加载
         if (loadedPluginBOMap.containsKey(uniqueId)) {
-            logger.debug("plugin already loaded. module={};", uniqueId);
+            logger.debug("插件已加载过，放弃当前加载. plugin={};", uniqueId);
             return;
         }
 
@@ -178,12 +173,9 @@ public class PluginLoader {
                 plugin.getClass().getName(),
                 pluginJarFile
         );
-        // 初始化插件信息
-        final CorePlugin corePlugin = new CorePlugin(uniqueId, pluginJarFile, pluginClassLoader, plugin);
-        // 设置为已经加载
-        corePlugin.markLoaded(true);
+        plugin.setUniqueId(uniqueId);
         // 注册到插件列表中
-        loadedPluginBOMap.put(uniqueId, corePlugin);
+        loadedPluginBOMap.put(uniqueId, plugin);
 
     }
 }

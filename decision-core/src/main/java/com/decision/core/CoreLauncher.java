@@ -1,14 +1,17 @@
 package com.decision.core;
 
-import com.decision.core.common.DecisionPluginDefine;
 import com.decision.core.manager.loader.PluginLoader;
+import com.decision.core.plugin.AbstractDecisionPluginDefine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 /**
  * @Author KD
@@ -16,30 +19,20 @@ import java.util.*;
  */
 public class CoreLauncher {
     private final Logger logger = LoggerFactory.getLogger(CoreLauncher.class);
-    private static CoreLauncher instance = new CoreLauncher();
 
-    private CoreLauncher() {
 
+    public static CoreLauncher getInstance() {
+        return new CoreLauncher();
     }
 
-
-    public CoreLauncher getInstance() {
-        return instance;
-    }
-
-    public List<DecisionPluginDefine> loadPlugins(String pluginJarPath) {
-        final List<DecisionPluginDefine> loadedPluginDefines = new ArrayList<DecisionPluginDefine>();
+    public List<AbstractDecisionPluginDefine> loadPlugins(String pluginJarPath) {
+        List<AbstractDecisionPluginDefine> loadedPluginDefines = new ArrayList<AbstractDecisionPluginDefine>();
         File[] pluginLibFiles = getPluginLibFiles(pluginJarPath);
         for (final File moduleLibDir : pluginLibFiles) {
             // 对模块访问权限进行校验
             if (moduleLibDir.exists() && moduleLibDir.canRead()) {
-                Map<String, CorePlugin> loadedPlugins = new PluginLoader(moduleLibDir)
+                loadedPluginDefines = new PluginLoader(moduleLibDir)
                         .load();
-                if (loadedPlugins.size() >= 0) {
-                    for (Map.Entry<String, CorePlugin> stringCorePluginEntry : loadedPlugins.entrySet()) {
-                        loadedPluginDefines.add(stringCorePluginEntry.getValue().getPlugin());
-                    }
-                }
             } else {
                 logger.warn("plugin-lib not access, ignore flush load this lib. path={}", moduleLibDir);
             }

@@ -1,4 +1,4 @@
-package com.decision.core.common;
+package com.decision.core.plugin;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

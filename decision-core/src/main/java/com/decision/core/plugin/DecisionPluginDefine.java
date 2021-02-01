@@ -1,4 +1,4 @@
-package com.decision.core.common;
+package com.decision.core.plugin;
 
 /**
  * 插件接口
@@ -8,6 +8,7 @@ package com.decision.core.common;
  * @Date 2021/1/22 10:56
  */
 public interface DecisionPluginDefine {
+
     /**
      * 拦截点
      *
