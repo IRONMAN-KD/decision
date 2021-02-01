@@ -1,14 +1,15 @@
 package com.decision.agent;
 
-import com.decision.agent.classloader.DecisionClassLoader;
-import com.decision.core.common.DecisionPluginDefine;
-import com.decision.core.common.PluginInterceptPoint;
+import com.decision.core.classloader.DecisionClassLoader;
+import com.decision.core.plugin.DecisionPluginDefine;
+import com.decision.core.plugin.PluginInterceptPoint;
+import com.decision.core.plugin.interceptor.InstanceInterceptorProxy;
 import com.decision.core.util.DecisionUtils;
 import com.decision.core.util.LogbackUtils;
 import net.bytebuddy.agent.builder.AgentBuilder;
-import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
+import net.bytebuddy.implementation.MethodDelegation;
 import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
 import org.slf4j.Logger;
@@ -18,7 +19,6 @@ import java.io.File;
 import java.lang.instrument.Instrumentation;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.jar.JarFile;
 
 /**
  * DecisionAgent启动器
@@ -50,14 +50,9 @@ public class AgentLauncher {
                     public DynamicType.Builder<?> transform(DynamicType.Builder<?> builder,
                                                             TypeDescription typeDescription,
                                                             ClassLoader classLoader, JavaModule javaModule) {
-                        String className = typeDescription.getName();
-                        builder = builder.visit(Advice.to(plugin.interceptorAdviceClass()).on(interceptPoint.buildMethodsMatcher()));
-                        FieldDefine[] fields = plugin.buildFieldDefine();
-                        if (fields != null && fields.length > 0) {
-                            for (int x = 0; x < fields.length; x++) {
-                                builder = builder.defineField(fields[x].name, fields[x].type, fields[x].modifiers);
-                            }
-                        }
+                        builder = builder.method(interceptPoint.buildMethodsMatcher())
+                                .intercept(MethodDelegation.withDefaultConfiguration()
+                                        .to(new InstanceInterceptorProxy(plugin.interceptorAdviceClass().getName())));
                         return builder;
                     }
                 };
@@ -67,11 +62,9 @@ public class AgentLauncher {
         agentBuilder.installOn(inst);
     }
 
-    private static void initialize(Instrumentation inst) {
+    private static void initialize(Instrumentation) {
         try {
             String decisionHome = DecisionUtils.getDecisionHomePath();
-            //将spy植入bootstrapClassLoader的搜索范围，即使用BootstrapClassLoader加载spy的类
-            inst.appendToBootstrapClassLoaderSearch(new JarFile(new File(getDecisionSpyJarPath(decisionHome))));
             //初始化日志框架
             LogbackUtils.init(getDecisionLogCfgPath(decisionHome));
 
@@ -141,10 +134,6 @@ public class AgentLauncher {
 
     private static String getDecisionCoreJarPath(String decisionHome) {
         return decisionHome + File.separatorChar + "lib" + File.separator + "decision-core.jar";
-    }
-
-    private static String getDecisionSpyJarPath(String decisionHome) {
-        return decisionHome + File.separatorChar + "lib" + File.separator + "decision-spy.jar";
     }
 
     private static String getDecisionPluginJarPath(String decisionHome) {
