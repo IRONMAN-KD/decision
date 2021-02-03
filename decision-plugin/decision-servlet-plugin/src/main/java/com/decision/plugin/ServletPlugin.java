@@ -1,9 +1,8 @@
 package com.decision.plugin;
 
-import com.decision.core.plugin.AbstractDecisionPluginDefine;
 import com.decision.core.plugin.DecisionPlugin;
+import com.decision.core.plugin.DecisionPluginDefine;
 import com.decision.core.plugin.PluginInterceptPoint;
-import com.decision.plugin.interceptor.ServletInterceptor;
 import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.matcher.ElementMatcher;
@@ -14,15 +13,19 @@ import org.kohsuke.MetaInfServices;
  * @Author linkedong@vv.cn
  * @Date 2021/2/1 14:06
  */
-@MetaInfServices(AbstractDecisionPluginDefine.class)
-@DecisionPlugin(id = "servlet", version = "1.0.0", author = "linkedong@vv.cn")
-public class ServletPlugin extends AbstractDecisionPluginDefine {
+@MetaInfServices(DecisionPluginDefine.class)
+@DecisionPlugin(id = "servlet", version = "1.0.0", author = "KD")
+public class ServletPlugin implements DecisionPluginDefine {
+    private static final String ENHANCE_CLASS = "javax.servlet.http.HttpServlet";
+    private static final String INTERCEPT_CLASS = "com.decision.plugin.interceptor.ServletInterceptor";
+
+    @Override
     public PluginInterceptPoint[] getInterceptPoint() {
         return new PluginInterceptPoint[]{
                 new PluginInterceptPoint() {
                     @Override
                     public ElementMatcher<TypeDescription> buildTypesMatcher() {
-                        ElementMatcher.Junction<TypeDescription> matcher = ElementMatchers.hasSuperType(ElementMatchers.named("javax.servlet.http.HttpServlet"))
+                        ElementMatcher.Junction<TypeDescription> matcher = ElementMatchers.hasSuperType(ElementMatchers.named(ENHANCE_CLASS))
                                 .and(ElementMatchers.not(ElementMatchers.<TypeDescription>isAbstract()));
                         return matcher;
                     }
@@ -35,11 +38,13 @@ public class ServletPlugin extends AbstractDecisionPluginDefine {
                                 .and(ElementMatchers.takesArgument(1, ElementMatchers.named("javax.servlet.http.HttpServletResponse")))
                                 .and(ElementMatchers.<MethodDescription>nameStartsWith("do"));
                     }
+
+                    @Override
+                    public String getMethodInterceptor() {
+                        return INTERCEPT_CLASS;
+                    }
                 }
         };
     }
 
-    public Class interceptorAdviceClass() {
-        return ServletInterceptor.class;
-    }
 }
