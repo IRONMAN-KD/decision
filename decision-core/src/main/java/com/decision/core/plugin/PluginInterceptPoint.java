@@ -24,4 +24,10 @@ public interface PluginInterceptPoint {
      * @return
      */
     ElementMatcher<MethodDescription> buildMethodsMatcher();
+
+    /**
+     * 获取处理类的类名
+     * @return
+     */
+    String getMethodInterceptor();
 }

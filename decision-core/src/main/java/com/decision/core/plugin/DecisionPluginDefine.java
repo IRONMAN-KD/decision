@@ -16,11 +16,5 @@ public interface DecisionPluginDefine {
      */
     PluginInterceptPoint[] getInterceptPoint();
 
-    /**
-     * 拦截器名称
-     *
-     * @return
-     */
-    Class interceptorAdviceClass();
 
 }

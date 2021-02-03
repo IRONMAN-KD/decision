@@ -13,19 +13,19 @@ import java.io.InputStream;
 
 /**
  * Logback日志框架工具类
+ *
+ * @author KD
  */
 public class LogbackUtils {
 
 
     /**
      * 初始化Logback日志框架
-     *
-     * @param logbackCfgFilePath logback配置文件路径
      */
-    public static void init(final String logbackCfgFilePath) {
+    public static void init(final String decisionHome) {
         final LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
         final JoranConfigurator configurator = new JoranConfigurator();
-        final File configureFile = new File(logbackCfgFilePath);
+        final File configureFile = new File(getDecisionLogCfgPath(decisionHome));
         configurator.setContext(loggerContext);
         loggerContext.reset();
         InputStream is = null;
@@ -50,6 +50,15 @@ public class LogbackUtils {
         } catch (Throwable cause) {
             cause.printStackTrace();
         }
+    }
+
+
+    private static String getDecisionLogCfgPath(String decisionHome) {
+        return decisionHome + File.separatorChar + "cfg" + File.separatorChar + "decision-logback.xml";
+    }
+
+    private static String getDecisionLogHomePath(String decisionHome) {
+        return decisionHome + File.separatorChar + "logs";
     }
 
 }

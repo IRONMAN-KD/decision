@@ -1,8 +1,8 @@
-package com.decision.core.manager.loader;
+package com.decision.core.plugin;
 
-import com.decision.core.classloader.DecisionClassLoader;
-import com.decision.core.plugin.AbstractDecisionPluginDefine;
-import com.decision.core.plugin.DecisionPlugin;
+import com.decision.core.classloader.PluginJarClassLoader;
+import com.decision.core.util.LogbackUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,25 +16,48 @@ import static org.apache.commons.io.FileUtils.listFiles;
 import static org.apache.commons.lang3.StringUtils.join;
 
 /**
- * 插件加载
- *
  * @Author KD
- * @Date 2021/1/22 10:20
+ * @Date 2021/1/21 11:44
  */
 public class PluginLoader {
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final File pluginLibDir;
+    private final Logger logger = LoggerFactory.getLogger(PluginLoader.class);
     /**
      * 已加载的插件集合
      */
-    private final Map<String, AbstractDecisionPluginDefine> loadedPluginBOMap = new ConcurrentHashMap<String, AbstractDecisionPluginDefine>();
-    private final List<AbstractDecisionPluginDefine> loadedPluginList = new ArrayList<AbstractDecisionPluginDefine>();
+    private final Map<String, DecisionPluginDefine> loadedPluginBOMap = new ConcurrentHashMap<String, DecisionPluginDefine>();
+    private final List<DecisionPluginDefine> loadedPluginList = new ArrayList<DecisionPluginDefine>();
 
-    public PluginLoader(File pluginLibDir) {
-        this.pluginLibDir = pluginLibDir;
+    public List<DecisionPluginDefine> loadPlugins(String decisionHome) {
+        LogbackUtils.init(decisionHome);
+        List<DecisionPluginDefine> loadedPluginDefines = new ArrayList<DecisionPluginDefine>();
+        File[] pluginLibFiles = getPluginLibFiles(getDecisionPluginJarPath(decisionHome));
+        for (final File pluginLibDir : pluginLibFiles) {
+            // 对插件访问权限进行校验
+            if (pluginLibDir.exists() && pluginLibDir.canRead()) {
+                loadedPluginDefines = load(pluginLibDir);
+            } else {
+                logger.warn("plugin-lib not access, ignore flush load this lib. path={}", pluginLibDir);
+            }
+        }
+
+        return loadedPluginDefines;
     }
 
-    private File[] toPluginJarFileArray() {
+    private File[] getPluginLibFiles(String pluginJarPath) {
+        final Collection<File> foundPluginJarFiles = new LinkedHashSet<File>();
+        final File fileOfPath = new File(pluginJarPath);
+        if (fileOfPath.isDirectory()) {
+            foundPluginJarFiles.addAll(FileUtils.listFiles(new File(pluginJarPath), new String[]{"jar"}, false));
+        } else {
+            if (StringUtils.endsWithIgnoreCase(fileOfPath.getPath(), ".jar")) {
+                foundPluginJarFiles.add(fileOfPath);
+            }
+        }
+        return foundPluginJarFiles.toArray(new File[]{});
+    }
+
+
+    private File[] toPluginJarFileArray(File pluginLibDir) {
         if (pluginLibDir.exists()
                 && pluginLibDir.isFile()
                 && pluginLibDir.canRead()
@@ -50,8 +73,8 @@ public class PluginLoader {
     }
 
 
-    private File[] listPluginJarFileInLib() {
-        final File[] pluginJarFileArray = toPluginJarFileArray();
+    private File[] listPluginJarFileInLib(File pluginLibDir) {
+        final File[] pluginJarFileArray = toPluginJarFileArray(pluginLibDir);
         Arrays.sort(pluginJarFileArray);
         logger.info("加载插件 plugin-lib={}, 找到插件 {} plugin-jar files : {}",
                 pluginLibDir,
@@ -61,27 +84,27 @@ public class PluginLoader {
         return pluginJarFileArray;
     }
 
-    public List<AbstractDecisionPluginDefine> load() {
+    public List<DecisionPluginDefine> load(File pluginLibDir) {
         try {
-            for (File pluginJarFile : listPluginJarFileInLib()) {
+            for (File pluginJarFile : listPluginJarFileInLib(pluginLibDir)) {
                 boolean hasPluginLoadedSuccessFlag = false;
-                DecisionClassLoader pluginJarClassLoader = null;
+                PluginJarClassLoader decisionClassLoader = null;
                 logger.info("准备加载插件 plugin-jar={};", pluginJarFile);
                 try {
-                    pluginJarClassLoader = new DecisionClassLoader(pluginJarFile.getPath());
+                    decisionClassLoader = new PluginJarClassLoader(pluginJarFile.getPath(),PluginLoader.class.getClassLoader(),new PluginJarClassLoader.Routing(PluginLoader.class.getClassLoader(),"com.decision.core.*"));
 
                     final ClassLoader preTCL = Thread.currentThread().getContextClassLoader();
-                    Thread.currentThread().setContextClassLoader(pluginJarClassLoader);
+                    Thread.currentThread().setContextClassLoader(decisionClassLoader);
 
                     try {
-                        hasPluginLoadedSuccessFlag = loadingPlugins(pluginJarClassLoader, pluginJarFile);
+                        hasPluginLoadedSuccessFlag = loadingPlugins(decisionClassLoader, pluginJarFile);
                     } finally {
                         Thread.currentThread().setContextClassLoader(preTCL);
                     }
 
                 } finally {
                     if (!hasPluginLoadedSuccessFlag
-                            && null != pluginJarClassLoader) {
+                            && null != decisionClassLoader) {
                         logger.warn("加载已完成，但没有加载到插件，plugin-jar={};", pluginJarFile);
                     }
                 }
@@ -89,20 +112,20 @@ public class PluginLoader {
         } catch (Throwable t) {
             logger.error("加载插件失败! plugin-jar={};", pluginLibDir, t);
         }
-        for (Map.Entry<String, AbstractDecisionPluginDefine> entry : loadedPluginBOMap.entrySet()) {
+        for (Map.Entry<String, DecisionPluginDefine> entry : loadedPluginBOMap.entrySet()) {
             loadedPluginList.add(entry.getValue());
         }
         return loadedPluginList;
     }
 
-    private boolean loadingPlugins(final DecisionClassLoader pluginClassLoader, final File pluginJarFile) {
+    private boolean loadingPlugins(final ClassLoader pluginClassLoader, final File pluginJarFile) {
 
         final Set<String> loadedPluginUniqueIds = new LinkedHashSet<String>();
-        final ServiceLoader<AbstractDecisionPluginDefine> pluginServiceLoader = ServiceLoader.load(AbstractDecisionPluginDefine.class, pluginClassLoader);
-        final Iterator<AbstractDecisionPluginDefine> pluginIt = pluginServiceLoader.iterator();
+        final ServiceLoader<DecisionPluginDefine> pluginServiceLoader = ServiceLoader.load(DecisionPluginDefine.class, pluginClassLoader);
+        final Iterator<DecisionPluginDefine> pluginIt = pluginServiceLoader.iterator();
         while (pluginIt.hasNext()) {
 
-            final AbstractDecisionPluginDefine plugin;
+            final DecisionPluginDefine plugin;
             try {
                 plugin = pluginIt.next();
             } catch (Throwable cause) {
@@ -134,7 +157,7 @@ public class PluginLoader {
 
 
             try {
-                onLoad(uniqueId, plugin, pluginJarFile, pluginClassLoader);
+                onLoad(uniqueId, plugin, pluginJarFile);
             } catch (Throwable cause) {
                 logger.warn("加载插件实例出错: 跳过该实例. plugin={};class={};plugin-jar={};",
                         uniqueId,
@@ -158,9 +181,8 @@ public class PluginLoader {
     }
 
     public void onLoad(final String uniqueId,
-                       final AbstractDecisionPluginDefine plugin,
-                       final File pluginJarFile,
-                       final DecisionClassLoader pluginClassLoader) throws Throwable {
+                       final DecisionPluginDefine plugin,
+                       final File pluginJarFile) throws Throwable {
 
         // 如果之前已经加载过了相同ID的插件，则放弃当前插件的加载
         if (loadedPluginBOMap.containsKey(uniqueId)) {
@@ -173,9 +195,12 @@ public class PluginLoader {
                 plugin.getClass().getName(),
                 pluginJarFile
         );
-        plugin.setUniqueId(uniqueId);
         // 注册到插件列表中
         loadedPluginBOMap.put(uniqueId, plugin);
 
+    }
+
+    private static String getDecisionPluginJarPath(String decisionHome) {
+        return decisionHome + File.separatorChar + "plugins";
     }
 }
