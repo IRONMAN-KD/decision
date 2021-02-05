@@ -18,5 +18,8 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+    <properties>
+        <plugin.related.dir/>
+    </properties>
 
 </project>

@@ -14,6 +14,8 @@
     </modules>
 
     <artifactId>decision-springcloud-plugin</artifactId>
-
+    <properties>
+        <plugin.related.dir/>
+    </properties>
 
 </project>

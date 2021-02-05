@@ -12,7 +12,9 @@
     <artifactId>decision-plugin</artifactId>
     <packaging>pom</packaging>
     <properties>
-        <plugin.dir>${project.basedir}/decision-agent-bin/plugins</plugin.dir>
+        <plugin.related.dir />
+        <agent.package.dir>${project.build.directory}${plugin.related.dir}/../../../decision-agent-bin</agent.package.dir>
+        <plugin.dir>${agent.package.dir}/plugins</plugin.dir>
     </properties>
     <modules>
         <module>decision-servlet-plugin</module>
@@ -35,6 +37,13 @@
 
     <build>
         <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
