@@ -1,5 +1,6 @@
-package com.decision.agent;
+package com.decision.core;
 
+import com.decision.core.manager.loader.InterceptorInstanceLoader;
 import com.decision.core.plugin.DecisionPluginDefine;
 import com.decision.core.plugin.PluginInterceptPoint;
 import com.decision.core.plugin.PluginLoader;
@@ -22,12 +23,12 @@ import java.util.List;
  * @Author linkedong@vv.cn
  * @Date 2021/2/3 16:10
  */
-public class AgentBuilderProxy {
-    private static final String CORE_PLUGIN_LOADER_CLASS = "com.decision.core.plugin.PluginLoader";
-    private final Logger LOGGER = LoggerFactory.getLogger(AgentBuilderProxy.class);
+public class CoreLauncher {
+    private final Logger LOGGER = LoggerFactory.getLogger(CoreLauncher.class);
 
-    public void buildAgent(Instrumentation inst, String decisionHome) {
+    public void init(Instrumentation inst, String decisionHome) {
         try {
+
             AgentBuilder agentBuilder = new AgentBuilder.Default()
                     .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
                     .with(buildListener())
@@ -46,7 +47,7 @@ public class AgentBuilderProxy {
                                                                 ClassLoader classLoader, JavaModule javaModule) {
                             builder = builder.method(interceptPoint.buildMethodsMatcher())
                                     .intercept(MethodDelegation.withDefaultConfiguration()
-                                            .to(new InstanceInterceptorProxy(interceptPoint.getMethodInterceptor())));
+                                            .to(new InstanceInterceptorProxy(interceptPoint.getMethodInterceptor(),classLoader)));
                             return builder;
                         }
                     };

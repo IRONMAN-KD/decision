@@ -12,17 +12,16 @@ import java.lang.instrument.Instrumentation;
 public class AgentLauncher {
 
     private static final String CORE_CONFIGURE_CLASS = "com.decision.core.CoreConfigure";
-    private static final String CORE_AGENT_BUILDER_PROXY_CLASS = "com.decision.agent.AgentBuilderProxy";
+    private static final String CORE_LAUNCHER_CLASS = "com.decision.core.CoreLauncher";
 
     public static void premain(String arguments, Instrumentation inst) {
         try {
             String decisionHome = getDecisionHomePath();
-
             //使用自定义classloader，尽量避免agent类影响业务系统
             final DecisionClassLoader decisionClassLoader = new DecisionClassLoader(getDecisionCoreJarPath(decisionHome));
-            Class<?> classOfPluginLoader = decisionClassLoader.loadClass(CORE_AGENT_BUILDER_PROXY_CLASS);
+            Class<?> classOfPluginLoader = decisionClassLoader.loadClass(CORE_LAUNCHER_CLASS);
             Object instanceOfPluginLoader = classOfPluginLoader.newInstance();
-            classOfPluginLoader.getMethod("buildAgent", Instrumentation.class, String.class)
+            classOfPluginLoader.getMethod("init", Instrumentation.class, String.class)
                     .invoke(instanceOfPluginLoader, inst, decisionHome);
         } catch (Exception e) {
             throw new RuntimeException("init decision agent error ", e);
@@ -47,7 +46,11 @@ public class AgentLauncher {
 
 
     private static String getDecisionCoreJarPath(String decisionHome) {
-        return decisionHome + File.separatorChar + "decision-agent.jar";
+        return decisionHome + File.separatorChar + "lib" + File.separatorChar + "decision-core.jar";
+    }
+
+    private static String getDecisionSpyJarPath(String decisionHome) {
+        return decisionHome + File.separatorChar + "spy" + File.separatorChar + "decision-spy.jar";
     }
 
 
