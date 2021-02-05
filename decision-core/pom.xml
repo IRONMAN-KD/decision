@@ -9,22 +9,66 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
+    <properties>
+        <file.name>decision-core</file.name>
+        <bytebuddy.version>1.10.13</bytebuddy.version>
+    </properties>
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>8</source>
-                    <target>8</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <artifactSet>
+                                <includes>
+                                    <include>javassist:javassist:jar:</include>
+                                    <include>net.bytebuddy:byte-buddy:jar:</include>
+                                    <include>net.bytebuddy:byte-buddy-agent:jar:</include>
+                                </includes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <mkdir dir="${project.basedir}/../decision-agent-bin/lib"/>
+                                <mkdir dir="${project.basedir}/../decision-agent-bin/logs" />
+                                <copy file="${project.build.directory}/${file.name}-${project.version}.jar"
+                                      tofile="${project.basedir}/../decision-agent-bin/lib/${file.name}.jar" overwrite="true"/>
+
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
     <artifactId>decision-core</artifactId>
-    <properties>
-        <bytebuddy.version>1.10.13</bytebuddy.version>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>net.bytebuddy</groupId>
@@ -50,6 +94,11 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>com.decision</groupId>
+            <artifactId>decision-spy</artifactId>
+            <version>${decision.version}</version>
         </dependency>
     </dependencies>
 

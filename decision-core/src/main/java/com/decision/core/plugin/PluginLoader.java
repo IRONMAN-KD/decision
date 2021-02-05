@@ -1,6 +1,7 @@
 package com.decision.core.plugin;
 
 import com.decision.core.classloader.PluginJarClassLoader;
+import com.decision.core.manager.loader.InterceptorInstanceLoader;
 import com.decision.core.util.LogbackUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -28,9 +29,11 @@ public class PluginLoader {
     private final List<DecisionPluginDefine> loadedPluginList = new ArrayList<DecisionPluginDefine>();
 
     public List<DecisionPluginDefine> loadPlugins(String decisionHome) {
+        String decisionPluginJarPath = getDecisionPluginJarPath(decisionHome);
         LogbackUtils.init(decisionHome);
+        InterceptorInstanceLoader.init(decisionPluginJarPath);
         List<DecisionPluginDefine> loadedPluginDefines = new ArrayList<DecisionPluginDefine>();
-        File[] pluginLibFiles = getPluginLibFiles(getDecisionPluginJarPath(decisionHome));
+        File[] pluginLibFiles = getPluginLibFiles(decisionPluginJarPath);
         for (final File pluginLibDir : pluginLibFiles) {
             // 对插件访问权限进行校验
             if (pluginLibDir.exists() && pluginLibDir.canRead()) {
@@ -91,7 +94,7 @@ public class PluginLoader {
                 PluginJarClassLoader decisionClassLoader = null;
                 logger.info("准备加载插件 plugin-jar={};", pluginJarFile);
                 try {
-                    decisionClassLoader = new PluginJarClassLoader(pluginJarFile.getPath(),PluginLoader.class.getClassLoader(),new PluginJarClassLoader.Routing(PluginLoader.class.getClassLoader(),"com.decision.core.*"));
+                    decisionClassLoader = new PluginJarClassLoader(pluginJarFile.getPath(), PluginLoader.class.getClassLoader(), new PluginJarClassLoader.Routing(PluginLoader.class.getClassLoader(), "com.decision.core.*"));
 
                     final ClassLoader preTCL = Thread.currentThread().getContextClassLoader();
                     Thread.currentThread().setContextClassLoader(decisionClassLoader);

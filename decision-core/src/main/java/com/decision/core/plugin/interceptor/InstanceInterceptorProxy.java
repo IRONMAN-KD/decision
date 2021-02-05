@@ -16,9 +16,9 @@ public class InstanceInterceptorProxy {
     private Logger logger = LoggerFactory.getLogger(InstanceInterceptorProxy.class);
     private InstanceAroundInterceptor interceptor;
 
-    public InstanceInterceptorProxy(String interceptorClassName) {
+    public InstanceInterceptorProxy(String interceptorClassName,ClassLoader classLoader) {
         try {
-            interceptor = InterceptorInstanceLoader.load(interceptorClassName);
+            interceptor = InterceptorInstanceLoader.load(interceptorClassName,classLoader);
         } catch (Throwable t) {
             logger.error("create interceptor error {}", t.getMessage());
         }

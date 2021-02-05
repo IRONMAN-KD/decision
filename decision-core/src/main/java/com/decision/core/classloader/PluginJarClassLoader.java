@@ -31,6 +31,12 @@ public class PluginJarClassLoader extends URLClassLoader {
     }
 
     public PluginJarClassLoader(final String decisionJarPath,
+                                final ClassLoader parent) throws MalformedURLException {
+        super(new URL[]{new URL("file:" + decisionJarPath)}, parent);
+        this.routingArray = null;
+    }
+
+    public PluginJarClassLoader(final String decisionJarPath,
                                 final ClassLoader parent,
                                 final Routing... routingArray) throws MalformedURLException {
         super(new URL[]{new URL("file:" + decisionJarPath)}, parent);
