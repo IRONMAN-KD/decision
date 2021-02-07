@@ -14,11 +14,12 @@ import java.util.concurrent.Callable;
  */
 public class InstanceInterceptorProxy {
     private Logger logger = LoggerFactory.getLogger(InstanceInterceptorProxy.class);
-    private InstanceAroundInterceptor interceptor;
+    private AbstractInstanceAroundInterceptor interceptor;
 
     public InstanceInterceptorProxy(String interceptorClassName,ClassLoader classLoader) {
         try {
             interceptor = InterceptorInstanceLoader.load(interceptorClassName,classLoader);
+            interceptor.setLogger(LoggerFactory.getLogger(interceptorClassName));
         } catch (Throwable t) {
             logger.error("create interceptor error {}", t.getMessage());
         }

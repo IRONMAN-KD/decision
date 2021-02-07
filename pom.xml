@@ -11,11 +11,13 @@
         <module>decision-core</module>
         <module>decision-plugin</module>
         <module>decision-agent</module>
+
     </modules>
     <packaging>pom</packaging>
     <name>decision</name>
     <properties>
         <decision.version>1.0.0</decision.version>
+        <shade.package>com.decision.agent.dependencies</shade.package>
     </properties>
 
 </project>

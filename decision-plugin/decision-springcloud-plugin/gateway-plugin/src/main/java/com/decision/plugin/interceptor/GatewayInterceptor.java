@@ -8,9 +8,8 @@ import com.decision.core.plugin.context.ContextModel;
 import com.decision.core.plugin.context.DecisionPluginContext;
 import com.decision.core.plugin.context.HeaderConfigHolder;
 import com.decision.core.plugin.context.ServerInfoHolder;
-import com.decision.core.plugin.interceptor.InstanceAroundInterceptor;
+import com.decision.core.plugin.interceptor.AbstractInstanceAroundInterceptor;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.web.server.ServerWebExchange;
@@ -23,8 +22,8 @@ import java.util.Map;
  * @Author linkedong@vv.cn
  * @Date 2021/2/3 17:01
  */
-public class GatewayInterceptor implements InstanceAroundInterceptor {
-    private static final Logger logger = LoggerFactory.getLogger(GatewayInterceptor.class);
+public class GatewayInterceptor extends AbstractInstanceAroundInterceptor {
+    private Logger logger = getLogger();
 
     @Override
     public void before(Object targetObject, Method method, Object[] allArguments, Class<?>[] parameterTypes) {

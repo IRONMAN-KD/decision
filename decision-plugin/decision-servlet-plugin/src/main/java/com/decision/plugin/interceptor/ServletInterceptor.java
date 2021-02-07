@@ -6,17 +6,17 @@ import com.decision.core.plugin.constant.HeaderKey;
 import com.decision.core.plugin.context.ContextModel;
 import com.decision.core.plugin.context.DecisionPluginContext;
 import com.decision.core.plugin.context.ServerInfoHolder;
-import com.decision.core.plugin.interceptor.InstanceAroundInterceptor;
+import com.decision.core.plugin.interceptor.AbstractInstanceAroundInterceptor;
+import org.slf4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 
 /**
- *
  * @author KD
  */
-public class ServletInterceptor implements InstanceAroundInterceptor {
-
+public class ServletInterceptor extends AbstractInstanceAroundInterceptor {
+    private Logger logger = getLogger();
 
     @Override
     public void before(Object targetObject, Method method, Object[] allArguments, Class<?>[] parameterTypes) {

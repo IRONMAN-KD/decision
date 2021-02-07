@@ -2,7 +2,6 @@ package com.decision.core.plugin;
 
 import com.decision.core.classloader.PluginJarClassLoader;
 import com.decision.core.manager.loader.InterceptorInstanceLoader;
-import com.decision.core.util.LogbackUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -30,7 +29,7 @@ public class PluginLoader {
 
     public List<DecisionPluginDefine> loadPlugins(String decisionHome) {
         String decisionPluginJarPath = getDecisionPluginJarPath(decisionHome);
-        LogbackUtils.init(decisionHome);
+        //LogbackUtils.init(decisionHome);
         InterceptorInstanceLoader.init(decisionPluginJarPath);
         List<DecisionPluginDefine> loadedPluginDefines = new ArrayList<DecisionPluginDefine>();
         File[] pluginLibFiles = getPluginLibFiles(decisionPluginJarPath);

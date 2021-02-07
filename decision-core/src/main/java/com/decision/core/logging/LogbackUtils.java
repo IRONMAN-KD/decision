@@ -1,4 +1,4 @@
-package com.decision.core.util;
+package com.decision.core.logging;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
@@ -33,12 +33,16 @@ public class LogbackUtils {
         try {
             is = new FileInputStream(configureFile);
             configurator.doConfigure(is);
-            logger.info("initializing logback success. file={};", configureFile);
+            logger.info("initializing decision logback success. file={};", configureFile);
         } catch (Throwable cause) {
-            logger.warn("initialize logback failed. file={};", configureFile, cause);
+            logger.warn("initialize decision logback failed. file={};", configureFile, cause);
         } finally {
             IOUtils.closeQuietly(is);
         }
+    }
+
+    public static Logger getLogger(Class clazz) {
+        return LoggerFactory.getLogger(clazz);
     }
 
     /**

@@ -14,6 +14,13 @@
     <properties>
         <file.name>decision-agent</file.name>
     </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.decision</groupId>
+            <artifactId>decision-core</artifactId>
+            <version>${decision.version}</version>
+        </dependency>
+    </dependencies>
     <build>
         <finalName>decision-agent</finalName>
         <plugins>
@@ -42,7 +49,32 @@
                                     </manifestEntries>
                                 </transformer>
                             </transformers>
-
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>commons-logging:*</exclude>
+                                    <exclude>jline:*</exclude>
+                                    <exclude>io.netty:*</exclude>
+                                    <exclude>log4j:*</exclude>
+                                </excludes>
+                            </artifactSet>
+                            <relocations>
+                                <relocation>
+                                    <pattern>net.bytebuddy</pattern>
+                                    <shadedPattern>${shade.package}.net.bytebuddy</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.lang3</pattern>
+                                    <shadedPattern>${shade.package}.org.apache.commons.lang3</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.slf4j</pattern>
+                                    <shadedPattern>${shade.package}.org.slf4j</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>ch.qos.logback</pattern>
+                                    <shadedPattern>${shade.package}.ch.qos.logback</shadedPattern>
+                                </relocation>
+                            </relocations>
                         </configuration>
                     </execution>
                 </executions>
@@ -60,6 +92,7 @@
                         <configuration>
                             <tasks>
                                 <mkdir dir="${project.basedir}/../decision-agent-bin/"/>
+                                <mkdir dir="${project.basedir}/../decision-agent-bin/logs" />
                                 <copy file="${project.build.directory}/${file.name}.jar"
                                       tofile="${project.basedir}/../decision-agent-bin/${file.name}.jar" overwrite="true"/>
                                 <copydir src="${project.basedir}/../config" dest="${project.basedir}/../decision-agent-bin/cfg" forceoverwrite="true" />
@@ -69,7 +102,39 @@
                 </executions>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*.*</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.*</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
 
+        </resources>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <includes>
+                    <include>**/*.*</include>
+                </includes>
+                <filtering>true</filtering>
+            </testResource>
+            <testResource>
+                <directory>src/test/java</directory>
+                <includes>
+                    <include>**/*.*</include>
+                </includes>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
     </build>
 
 </project>
