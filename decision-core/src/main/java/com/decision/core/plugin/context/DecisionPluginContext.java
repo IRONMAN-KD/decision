@@ -6,27 +6,27 @@ import com.decision.core.plugin.common.GlobalIdGenerator;
 /**
  * decision 上线文
  *
- * @Author linkedong@vv.cn
+ * @Author KD
  * @Date 2020/12/9 16:07
  */
 public class DecisionPluginContext {
-    private static final InheritableThreadLocal<ContextModel> decisionContext = new InheritableThreadLocal<ContextModel>();
+    private static final InheritableThreadLocal<ContextModel> DECISION_CONTEXT = new InheritableThreadLocal<ContextModel>();
     private static final String APPEND_SIGN = "->";
     private static final String VERSION_APPEND_SIGN = ":";
 
     public static void clean() {
-        decisionContext.remove();
+        DECISION_CONTEXT.remove();
     }
 
     public static void set(ContextModel contextModel) {
-        decisionContext.set(contextModel);
+        DECISION_CONTEXT.set(contextModel);
     }
-    
+
     public static ContextModel getOrCreate() {
-        ContextModel context = decisionContext.get();
+        ContextModel context = DECISION_CONTEXT.get();
         if (null == context) {
             context = create();
-            decisionContext.set(context);
+            DECISION_CONTEXT.set(context);
         }
         return context;
     }
@@ -34,7 +34,7 @@ public class DecisionPluginContext {
     public static ContextModel create() {
         ContextModel context = new ContextModel();
         context.setId(GlobalIdGenerator.generate());
-        decisionContext.set(context);
+        DECISION_CONTEXT.set(context);
         return context;
     }
 
@@ -45,7 +45,7 @@ public class DecisionPluginContext {
                 .append(VERSION_APPEND_SIGN)
                 .append(curServerVersion);
         String appendedAppNames = builder.toString();
-        decisionContext.get().setAppNames(appendedAppNames);
+        DECISION_CONTEXT.get().setAppNames(appendedAppNames);
         return appendedAppNames;
     }
 

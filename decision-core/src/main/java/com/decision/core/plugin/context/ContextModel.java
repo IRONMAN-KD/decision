@@ -3,7 +3,7 @@ package com.decision.core.plugin.context;
 /**
  * 上下文对象
  *
- * @Author linkedong@vv.cn
+ * @Author KD
  * @Date 2020/12/9 16:07
  */
 public class ContextModel {

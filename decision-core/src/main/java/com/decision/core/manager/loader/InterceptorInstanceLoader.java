@@ -1,28 +1,23 @@
 package com.decision.core.manager.loader;
 
-import com.decision.core.classloader.PluginJarClassLoader;
-import com.decision.core.plugin.PluginLoader;
-import com.decision.core.plugin.interceptor.AbstractInstanceAroundInterceptor;
+import com.decision.core.classloader.AgentClassLoader;
+import com.decision.core.plugin.interceptor.InstanceAroundInterceptor;
 
-import java.net.MalformedURLException;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * @Author linkedong@vv.cn
+ * @Author KD
  * @Date 2021/2/1 17:33
  */
 public class InterceptorInstanceLoader {
-    private static ConcurrentHashMap<String, AbstractInstanceAroundInterceptor> INSTANCE_CACHE = new ConcurrentHashMap<String, AbstractInstanceAroundInterceptor>();
+    private static ConcurrentHashMap<String, InstanceAroundInterceptor> INSTANCE_CACHE = new ConcurrentHashMap<String, InstanceAroundInterceptor>();
     private static ReentrantLock INSTANCE_LOAD_LOCK = new ReentrantLock();
     private static Map<ClassLoader, ClassLoader> EXTEND_PLUGIN_CLASSLOADERS = new HashMap<ClassLoader, ClassLoader>();
-    private static volatile String path;
 
-    public static void init(String path) {
-        path = path;
-    }
 
     /**
      * @param className
@@ -32,34 +27,37 @@ public class InterceptorInstanceLoader {
      * @throws InstantiationException
      * @throws ClassNotFoundException
      */
-    public static AbstractInstanceAroundInterceptor load(String className, ClassLoader targetClassLoader) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+    public static InstanceAroundInterceptor load(String className, ClassLoader targetClassLoader, String decisionHome) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+
         if (targetClassLoader == null) {
             targetClassLoader = InterceptorInstanceLoader.class.getClassLoader();
         }
         String instanceKey = className + "_OF_" + targetClassLoader.getClass()
                 .getName() + "@" + Integer.toHexString(targetClassLoader
                 .hashCode());
-        AbstractInstanceAroundInterceptor inst = INSTANCE_CACHE.get(instanceKey);
+        InstanceAroundInterceptor inst = INSTANCE_CACHE.get(instanceKey);
         if (inst == null) {
-            INSTANCE_LOAD_LOCK.lock();
             ClassLoader pluginLoader = null;
+            INSTANCE_LOAD_LOCK.lock();
             try {
                 pluginLoader = EXTEND_PLUGIN_CLASSLOADERS.get(targetClassLoader);
                 if (pluginLoader == null) {
-                    pluginLoader = new PluginJarClassLoader(path, targetClassLoader, new PluginJarClassLoader.Routing(PluginLoader.class.getClassLoader(), "com.decision.core.*"));
+                    pluginLoader = new AgentClassLoader(targetClassLoader, getDecisionPluginJarPath(decisionHome));
                     EXTEND_PLUGIN_CLASSLOADERS.put(targetClassLoader, pluginLoader);
                 }
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
             } finally {
                 INSTANCE_LOAD_LOCK.unlock();
             }
-            inst = (AbstractInstanceAroundInterceptor) Class.forName(className, true, pluginLoader).newInstance();
+            inst = (InstanceAroundInterceptor) Class.forName(className, true, pluginLoader).newInstance();
             if (inst != null) {
                 INSTANCE_CACHE.put(instanceKey, inst);
             }
         }
 
         return inst;
+    }
+
+    private static String getDecisionPluginJarPath(String decisionHome) {
+        return decisionHome + File.separatorChar + "plugins";
     }
 }

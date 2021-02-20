@@ -7,9 +7,9 @@
         </encoder>
     </appender>
     <appender name="DECISION-FILE-APPENDER" class="com.decision.agent.dependencies.ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>D:/mytest/logs/decision.log</file>
+        <file>/home/decision-agent-bin/logs/decision.log</file>
         <rollingPolicy class="com.decision.agent.dependencies.ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <FileNamePattern>D:/mytest/logs/decision.log.%d{yyyy-MM-dd}</FileNamePattern>
+            <FileNamePattern>/home/decision-agent-bin/logs/decision.log.%d{yyyy-MM-dd}</FileNamePattern>
             <MaxHistory>30</MaxHistory>
         </rollingPolicy>
         <encoder>
@@ -19,8 +19,10 @@
     </appender>
 
     <root level="info">
-        <appender-ref ref="DECISION-FILE-APPENDER"/>
         <appender-ref ref="STDOUT"/>
+    </root>
+    <root level="debug">
+        <appender-ref ref="DECISION-FILE-APPENDER"/>
     </root>
 
 </configuration>

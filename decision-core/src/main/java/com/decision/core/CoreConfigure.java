@@ -26,16 +26,16 @@ public class CoreConfigure {
     }
 
     private Properties getProperties(String propertiesFilePath) {
-        final Properties CfgProperties = new Properties();
+        final Properties cfgProperties = new Properties();
 
         if (null == propertiesFilePath) {
-            return CfgProperties;
+            return cfgProperties;
         }
 
         final File propertiesFile = new File(propertiesFilePath);
         if (!propertiesFile.exists()
                 || !propertiesFile.canRead()) {
-            return CfgProperties;
+            return cfgProperties;
         }
 
 
@@ -50,6 +50,6 @@ public class CoreConfigure {
         } finally {
             IOUtils.closeQuietly(is);
         }
-        return CfgProperties;
+        return cfgProperties;
     }
 }

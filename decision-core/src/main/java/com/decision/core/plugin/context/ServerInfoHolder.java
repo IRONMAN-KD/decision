@@ -3,7 +3,7 @@ package com.decision.core.plugin.context;
 /**
  * 当前服务信息单例类
  *
- * @Author linkedong@vv.cn
+ * @Author KD
  * @Date 2020/12/29 17:35
  */
 public class ServerInfoHolder {
@@ -18,11 +18,11 @@ public class ServerInfoHolder {
     }
 
     private static class Holder {
-        public static final ServerInfoHolder serverInfo = new ServerInfoHolder();
+        public static final ServerInfoHolder SERVER_INFO = new ServerInfoHolder();
     }
 
     public static ServerInfoHolder getInstance() {
-        return Holder.serverInfo;
+        return Holder.SERVER_INFO;
     }
 
     public String getServerName() {

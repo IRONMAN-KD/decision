@@ -22,6 +22,11 @@ package com.decision.core.plugin.common;
 import java.util.Random;
 import java.util.UUID;
 
+/**
+ * 全局ID生成
+ *
+ * @author KD
+ */
 public final class GlobalIdGenerator {
     private static final String PROCESS_ID = UUID.randomUUID().toString().replaceAll("-", "");
     private static final ThreadLocal<IDContext> THREAD_ID_SEQUENCE = ThreadLocal.withInitial(

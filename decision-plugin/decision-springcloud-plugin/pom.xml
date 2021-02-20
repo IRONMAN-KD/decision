@@ -11,6 +11,8 @@
     <packaging>pom</packaging>
     <modules>
         <module>gateway-plugin</module>
+        <module>ribbon-plugin</module>
+        <module>feign-plugin</module>
     </modules>
 
     <artifactId>decision-springcloud-plugin</artifactId>

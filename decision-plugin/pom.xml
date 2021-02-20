@@ -19,6 +19,12 @@
     <modules>
         <module>decision-servlet-plugin</module>
         <module>decision-springcloud-plugin</module>
+        <module>decision-headerinfo-plugin</module>
+        <module>decision-serverinfo-plugin</module>
+        <module>decision-thread-plugin</module>
+        <module>decision-rabbitmq-plugin</module>
+        <module>decision-httpclient3.x-plugin</module>
+        <module>decision-httpclient4.x-plugin</module>
     </modules>
     <dependencies>
         <dependency>
@@ -75,6 +81,14 @@
                                 <relocation>
                                     <pattern>org.kohsuke.metainf-services</pattern>
                                     <shadedPattern>${shade.package}.org.kohsuke.metainf-services</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.slf4j</pattern>
+                                    <shadedPattern>${shade.package}.org.slf4j</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>ch.qos.logback</pattern>
+                                    <shadedPattern>${shade.package}.ch.qos.logback</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

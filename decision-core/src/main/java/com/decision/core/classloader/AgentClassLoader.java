@@ -18,6 +18,9 @@
 
 package com.decision.core.classloader;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -34,13 +37,13 @@ import java.util.jar.JarFile;
 
 /**
  * The <code>AgentClassLoader</code> represents a classloader, which is in charge of finding plugins and interceptors.
+ *
+ * @author kd
  */
 public class AgentClassLoader extends ClassLoader {
+    Logger logger = LoggerFactory.getLogger(getClass());
 
     static {
-        /*
-         * Try to solve the classloader dead lock. See https://github.com/apache/skywalking/pull/2016
-         */
         registerAsParallelCapable();
     }
 
@@ -79,8 +82,7 @@ public class AgentClassLoader extends ClassLoader {
                 }
                 return defineClass(name, data, 0, data.length);
             } catch (IOException e) {
-                e.printStackTrace();
-                // LOGGER.error(e, "find class fail.");
+                logger.error("find class fail.", e);
             }
         }
         throw new ClassNotFoundException("Can't find " + name);
@@ -150,9 +152,9 @@ public class AgentClassLoader extends ClassLoader {
                     File file = new File(classpath, fileName);
                     Jar jar = new Jar(new JarFile(file), file);
                     jars.add(jar);
-                    //LOGGER.info("{} loaded.", file.toString());
+                    logger.info("{} loaded.", file.toString());
                 } catch (IOException e) {
-                    //LOGGER.error(e, "{} jar file can't be resolved", fileName);
+                    logger.error("{} jar file can't be resolved", fileName, e);
                 }
             }
         }

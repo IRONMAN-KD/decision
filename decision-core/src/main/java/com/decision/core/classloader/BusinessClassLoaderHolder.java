@@ -1,39 +1,39 @@
 package com.decision.core.classloader;
 
 /**
- * @author zhuangpeng
+ * @author KD
  * @since 2020/1/15
  */
 public class BusinessClassLoaderHolder {
 
-    private static final ThreadLocal<DelegateBizClassLoader> holder = new ThreadLocal<DelegateBizClassLoader>();
+    private static final ThreadLocal<DelegateBizClassLoader> HOLDER = new ThreadLocal<DelegateBizClassLoader>();
 
-    public static void setBussinessClassLoader(ClassLoader classLoader){
-        if(null == classLoader){
+    public static void setBussinessClassLoader(ClassLoader classLoader) {
+        if (null == classLoader) {
             return;
         }
         DelegateBizClassLoader delegateBizClassLoader = new DelegateBizClassLoader(classLoader);
-        holder.set(delegateBizClassLoader);
+        HOLDER.set(delegateBizClassLoader);
     }
 
 
-    public static void removeBussinessClassLoader(){
-        holder.remove();
+    public static void removeBussinessClassLoader() {
+        HOLDER.remove();
     }
 
-    public static DelegateBizClassLoader getBussinessClassLoader(){
+    public static DelegateBizClassLoader getBussinessClassLoader() {
 
-        return holder.get();
+        return HOLDER.get();
     }
 
-    public static class DelegateBizClassLoader extends ClassLoader{
-        public DelegateBizClassLoader(ClassLoader parent){
+    public static class DelegateBizClassLoader extends ClassLoader {
+        public DelegateBizClassLoader(ClassLoader parent) {
             super(parent);
         }
 
         @Override
         public Class<?> loadClass(final String javaClassName, final boolean resolve) throws ClassNotFoundException {
-            return super.loadClass(javaClassName,resolve);
+            return super.loadClass(javaClassName, resolve);
         }
     }
 }

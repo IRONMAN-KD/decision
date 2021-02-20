@@ -29,8 +29,6 @@ public class PluginLoader {
 
     public List<DecisionPluginDefine> loadPlugins(String decisionHome) {
         String decisionPluginJarPath = getDecisionPluginJarPath(decisionHome);
-        //LogbackUtils.init(decisionHome);
-        InterceptorInstanceLoader.init(decisionPluginJarPath);
         List<DecisionPluginDefine> loadedPluginDefines = new ArrayList<DecisionPluginDefine>();
         File[] pluginLibFiles = getPluginLibFiles(decisionPluginJarPath);
         for (final File pluginLibDir : pluginLibFiles) {
@@ -95,13 +93,13 @@ public class PluginLoader {
                 try {
                     decisionClassLoader = new PluginJarClassLoader(pluginJarFile.getPath(), PluginLoader.class.getClassLoader(), new PluginJarClassLoader.Routing(PluginLoader.class.getClassLoader(), "com.decision.core.*"));
 
-                    final ClassLoader preTCL = Thread.currentThread().getContextClassLoader();
+                    final ClassLoader preTcl = Thread.currentThread().getContextClassLoader();
                     Thread.currentThread().setContextClassLoader(decisionClassLoader);
 
                     try {
                         hasPluginLoadedSuccessFlag = loadingPlugins(decisionClassLoader, pluginJarFile);
                     } finally {
-                        Thread.currentThread().setContextClassLoader(preTCL);
+                        Thread.currentThread().setContextClassLoader(preTcl);
                     }
 
                 } finally {

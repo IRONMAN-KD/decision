@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @Author linkedong@vv.cn
+ * @Author KD
  * @Date 2020/12/31 14:59
  */
 public class HeaderConfigHolder {
@@ -16,11 +16,11 @@ public class HeaderConfigHolder {
     }
 
     private static class Holder {
-        private static final HeaderConfigHolder holder = new HeaderConfigHolder();
+        private static final HeaderConfigHolder HOLDER = new HeaderConfigHolder();
     }
 
     public static HeaderConfigHolder getInstance() {
-        return Holder.holder;
+        return Holder.HOLDER;
     }
 
     public Map<String, String> getVersion() {

@@ -7,7 +7,7 @@ import net.bytebuddy.matcher.ElementMatcher;
 /**
  * 拦截点接口
  *
- * @Author linkedong@vv.cn
+ * @Author KD
  * @Date 2021/1/27 11:32
  */
 public interface PluginInterceptPoint {

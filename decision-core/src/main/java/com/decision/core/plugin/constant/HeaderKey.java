@@ -1,7 +1,7 @@
 package com.decision.core.plugin.constant;
 
 /**
- * @Author linkedong@vv.cn
+ * @Author KD
  * @Date 2020/12/10 14:58
  */
 public class HeaderKey {

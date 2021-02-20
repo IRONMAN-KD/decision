@@ -1,7 +1,7 @@
 package com.decision.core.plugin;
 
 /**
- * @Author linkedong@vv.cn
+ * @Author KD
  * @Date 2021/2/1 11:10
  */
 public abstract class AbstractDecisionPluginDefine implements DecisionPluginDefine{

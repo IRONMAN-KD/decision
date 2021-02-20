@@ -5,10 +5,12 @@ import com.decision.core.plugin.DecisionPluginDefine;
 import com.decision.core.plugin.PluginInterceptPoint;
 import com.decision.core.plugin.PluginLoader;
 import com.decision.core.plugin.interceptor.InstanceInterceptorProxy;
+import com.decision.core.plugin.interceptor.enhance.OverrideCallable;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.implementation.MethodDelegation;
+import net.bytebuddy.implementation.bind.annotation.Morph;
 import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.utility.JavaModule;
 
@@ -28,7 +30,7 @@ public class AgentLauncher {
 
         try {
             //获取包路径
-            String decisionHome = getDecisionHomePath();
+            final String decisionHome = getDecisionHomePath();
             // 初始化日志
             LogbackUtils.init(decisionHome);
             AgentBuilder agentBuilder = new AgentBuilder.Default()
@@ -48,7 +50,8 @@ public class AgentLauncher {
                                                                 ClassLoader classLoader, JavaModule javaModule) {
                             builder = builder.method(interceptPoint.buildMethodsMatcher())
                                     .intercept(MethodDelegation.withDefaultConfiguration()
-                                            .to(new InstanceInterceptorProxy(interceptPoint.getMethodInterceptor(), classLoader)));
+                                            .withBinders(Morph.Binder.install(OverrideCallable.class))
+                                            .to(new InstanceInterceptorProxy(interceptPoint.getMethodInterceptor(), classLoader, decisionHome)));
                             return builder;
                         }
                     };
