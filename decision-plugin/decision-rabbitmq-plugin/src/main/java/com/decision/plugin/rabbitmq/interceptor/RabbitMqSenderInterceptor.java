@@ -20,23 +20,23 @@ public class RabbitMqSenderInterceptor implements InstanceAroundInterceptor {
 
     @Override
     public void before(Object targetObject, Method method, Object[] allArguments, Class<?>[] parameterTypes, MethodInterceptResult result) {
-        logger.debug("----begin RabbitMq pulisher set context -----");
+        logger.debug(" begin RabbitMq pulisher set context ");
         ContextModel contextModel = DecisionPluginContext.getOrCreate();
         String version = contextModel.getVdVersion();
         String env = contextModel.getVdEnv();
         Message message = (Message) allArguments[4];
         if (null != version) {
-            logger.debug("context version :" + version);
+            logger.debug("decision context version :{}", version);
             message.getMessageProperties().getHeaders().put(HeaderKey.MQ_VERSION, version);
         }
         if (null != env) {
-            logger.debug("context env :" + env);
+            logger.debug("decision context env :{}", env);
             message.getMessageProperties().getHeaders().put(HeaderKey.MQ_ENV, env);
         }
         message.getMessageProperties().getHeaders().put(HeaderKey.PID, contextModel.getId());
         message.getMessageProperties().getHeaders().put(HeaderKey.TID, contextModel.getTraceId());
         message.getMessageProperties().getHeaders().put(HeaderKey.APP_NAMES, contextModel.getAppNames());
-        logger.debug("----end RabbitMq pulisher set context -----");
+        logger.debug(" end RabbitMq pulisher set context ");
         allArguments[4] = message;
     }
 

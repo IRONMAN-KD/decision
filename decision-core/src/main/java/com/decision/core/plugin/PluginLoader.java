@@ -76,7 +76,7 @@ public class PluginLoader {
     private File[] listPluginJarFileInLib(File pluginLibDir) {
         final File[] pluginJarFileArray = toPluginJarFileArray(pluginLibDir);
         Arrays.sort(pluginJarFileArray);
-        logger.info("加载插件 plugin-lib={}, 找到插件 {} plugin-jar files : {}",
+        logger.debug("加载插件 plugin-lib={}, 找到插件 {} plugin-jar files : {}",
                 pluginLibDir,
                 pluginJarFileArray.length,
                 join(pluginJarFileArray, ",")
@@ -89,7 +89,7 @@ public class PluginLoader {
             for (File pluginJarFile : listPluginJarFileInLib(pluginLibDir)) {
                 boolean hasPluginLoadedSuccessFlag = false;
                 PluginJarClassLoader decisionClassLoader = null;
-                logger.info("准备加载插件 plugin-jar={};", pluginJarFile);
+                logger.debug("准备加载插件 plugin-jar={};", pluginJarFile);
                 try {
                     decisionClassLoader = new PluginJarClassLoader(pluginJarFile.getPath(), PluginLoader.class.getClassLoader(), new PluginJarClassLoader.Routing(PluginLoader.class.getClassLoader(), "com.decision.core.*"));
 
@@ -172,7 +172,7 @@ public class PluginLoader {
 
         }
 
-        logger.info("插件加载完成, loaded {} plugin in plugin-jar={}, plugins={}",
+        logger.info("load plugin success, loaded {} plugin in plugin-jar={}, plugins={}",
                 loadedPluginUniqueIds.size(),
                 pluginJarFile,
                 loadedPluginUniqueIds

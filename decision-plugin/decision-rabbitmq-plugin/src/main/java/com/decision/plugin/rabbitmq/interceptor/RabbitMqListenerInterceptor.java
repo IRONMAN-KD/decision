@@ -38,7 +38,7 @@ public class RabbitMqListenerInterceptor implements InstanceAroundInterceptor {
             String env = serverInfoHolder.getServerEnv();
             if (null != headerVersion) {
                 String headerVersionStr = headerVersion.toString();
-                logger.debug("context version :" + headerVersionStr);
+                logger.debug("decision context version :{}", headerVersionStr);
                 String serverVersion = null != version ? String.format("\"%s\":\"%s\"", serverName, version) : null;
                 contextModel.setVdVersion(headerVersionStr);
                 if (null != serverVersion) {
@@ -47,12 +47,12 @@ public class RabbitMqListenerInterceptor implements InstanceAroundInterceptor {
             }
             if (null != headerEnv) {
                 String headerEnvStr = headerEnv.toString();
-                logger.debug("context version :" + headerEnvStr);
+                logger.debug("decision context env :{}", headerEnvStr);
                 contextModel.setVdEnv(headerEnvStr);
                 isNeedReject = !headerEnvStr.equals(env);
             }
             if (isNeedReject) {
-                logger.debug("---- RabbitMq consumer reject message -----");
+                logger.debug("RabbitMq consumer reject message ");
                 channel.basicReject(message.getMessageProperties().getDeliveryTag(), true);
             }
         } catch (Exception e) {
@@ -60,7 +60,7 @@ public class RabbitMqListenerInterceptor implements InstanceAroundInterceptor {
         }
 
         if (isNeedReject) {
-            logger.debug("----end  RabbitMq consumer return after reject -----");
+            logger.debug(" end  RabbitMq consumer return after reject ");
             result.defineReturnValue(null);
         }
         ServerInfoHolder serverInfo = ServerInfoHolder.getInstance();
@@ -71,7 +71,7 @@ public class RabbitMqListenerInterceptor implements InstanceAroundInterceptor {
             DecisionPluginContext.appendAppNames(appNames.toString(), serverInfo.getServerName(), serverInfo.getServerVersion());
             logger.debug(contextModel.getAppNames());
         }
-        logger.debug("----end  RabbitMq consumer do normal invoke -----");
+        logger.debug(" end  RabbitMq consumer do normal invoke ");
     }
 
     @Override

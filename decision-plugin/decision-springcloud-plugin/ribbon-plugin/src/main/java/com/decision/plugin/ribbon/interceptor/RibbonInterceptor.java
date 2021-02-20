@@ -30,7 +30,7 @@ public class RibbonInterceptor implements InstanceAroundInterceptor {
         ContextModel contextModel = DecisionPluginContext.getOrCreate();
         String vdVersion = contextModel.getVdVersion();
         String vdEnv = contextModel.getVdEnv();
-        logger.debug("----begin ribbon loadBalance route-----");
+        logger.debug(" begin ribbon loadBalance route ");
         List<Server> servers = (List<Server>) allArguments[0];
         List<Server> resultServers = new ArrayList<Server>();
         if (StringUtil.isEmpty(vdEnv) && StringUtil.isEmpty(vdVersion)) {
@@ -44,7 +44,7 @@ public class RibbonInterceptor implements InstanceAroundInterceptor {
         for (Server resultServer : resultServers) {
             logger.debug("route to server :" + resultServer.getMetaInfo().getInstanceId());
         }
-        logger.debug("----end ribbon loadBalance route-----");
+        logger.debug(" end ribbon loadBalance route ");
 
         allArguments[0] = resultServers;
     }
@@ -106,8 +106,8 @@ public class RibbonInterceptor implements InstanceAroundInterceptor {
 
             String applicationName = serviceName.substring(serviceName.lastIndexOf("@") + 1);
             boolean filterFlag = false;
-            if (StringUtil.isNotEmpty(vdEnv) && vdEnv.contains("\"" + applicationName + "\"")) {
-                if (vdEnv.contains("\"" + applicationName + "\":\"" + mateDataEnv + "\"")) {
+            if (StringUtil.isNotEmpty(vdEnv)) {
+                if (vdEnv.equals(mateDataEnv)) {
                     filterFlag = isHitVersion(vdVersion, applicationName, mateDataVersion);
                 }
             } else if (StringUtil.isNotEmpty(mateDataEnv) && mateDataEnv.equals(DecisionConstant.COMMON)) {

@@ -152,7 +152,6 @@ public class AgentClassLoader extends ClassLoader {
                     File file = new File(classpath, fileName);
                     Jar jar = new Jar(new JarFile(file), file);
                     jars.add(jar);
-                    logger.info("{} loaded.", file.toString());
                 } catch (IOException e) {
                     logger.error("{} jar file can't be resolved", fileName, e);
                 }

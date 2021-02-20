@@ -12,6 +12,8 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 /**
+ * 获取当前服务的元数据信息
+ *
  * @Author KD
  * @Date 2021/2/8 15:25
  */
@@ -20,7 +22,6 @@ public class ServerInfoOfNacosInterceptor implements InstanceAroundInterceptor {
 
     @Override
     public void before(Object targetObject, Method method, Object[] allArguments, Class<?>[] parameterTypes, MethodInterceptResult result) {
-        logger.info("server info begin------");
         Registration registration = (Registration) allArguments[0];
         ServerInfoHolder serverInfo = ServerInfoHolder.getInstance();
         serverInfo.setServerName(registration.getServiceId());
@@ -31,6 +32,7 @@ public class ServerInfoOfNacosInterceptor implements InstanceAroundInterceptor {
         if (null != metadata.get(DecisionMateData.ENV)) {
             serverInfo.setServerEnv(metadata.get(DecisionMateData.ENV));
         }
+        logger.info(" get server metadata info success ");
     }
 
     @Override

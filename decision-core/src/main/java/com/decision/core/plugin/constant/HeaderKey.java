@@ -11,6 +11,6 @@ public class HeaderKey {
     public static final String APP_NAMES = "vd-appNames";
     public static final String VERSION = "vd-version";
     public static final String ENV = "vd-env";
-    public static final String MQ_VERSION = "discovery-version";
-    public static final String MQ_ENV = "discovery-env";
+    public static final String MQ_VERSION = "decision-version";
+    public static final String MQ_ENV = "decision-env";
 }

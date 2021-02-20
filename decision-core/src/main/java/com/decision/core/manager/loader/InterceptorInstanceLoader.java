@@ -20,6 +20,8 @@ public class InterceptorInstanceLoader {
 
 
     /**
+     * 加载拦截处理类
+     *
      * @param className
      * @param targetClassLoader
      * @return
