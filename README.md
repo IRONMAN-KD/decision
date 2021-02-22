@@ -119,8 +119,8 @@ metadata:
 
 ### 交流与反馈
 ~~~shell
-qq群:1021457517
-微信：IronMan_lkd（请备注decision交流，进微信群）
+qq群: 1021457517
+微信号: IronMan_lkd（请备注decision交流，进微信群）
 ~~~
 
 
