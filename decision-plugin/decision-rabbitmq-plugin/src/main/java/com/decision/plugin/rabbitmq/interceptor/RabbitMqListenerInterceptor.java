@@ -1,5 +1,6 @@
 package com.decision.plugin.rabbitmq.interceptor;
 
+import com.decision.core.plugin.constant.DecisionConstant;
 import com.decision.core.plugin.constant.HeaderKey;
 import com.decision.core.plugin.context.ContextModel;
 import com.decision.core.plugin.context.DecisionPluginContext;
@@ -22,6 +23,8 @@ public class RabbitMqListenerInterceptor implements InstanceAroundInterceptor {
 
     @Override
     public void before(Object targetObject, Method method, Object[] allArguments, Class<?>[] parameterTypes, MethodInterceptResult result) {
+        boolean isHitEnv = false;
+        boolean isHitVersion = false;
         boolean isNeedReject = false;
         Channel channel = (Channel) allArguments[0];
         Message message = (Message) allArguments[1];
@@ -36,21 +39,29 @@ public class RabbitMqListenerInterceptor implements InstanceAroundInterceptor {
             String version = serverInfoHolder.getServerVersion();
             String serverName = serverInfoHolder.getServerName();
             String env = serverInfoHolder.getServerEnv();
-            if (null != headerVersion) {
-                String headerVersionStr = headerVersion.toString();
-                logger.debug("decision context version :{}", headerVersionStr);
-                String serverVersion = null != version ? String.format("\"%s\":\"%s\"", serverName, version) : null;
-                contextModel.setVdVersion(headerVersionStr);
-                if (null != serverVersion) {
-                    isNeedReject = !headerVersionStr.contains(serverVersion);
-                }
-            }
             if (null != headerEnv) {
                 String headerEnvStr = headerEnv.toString();
                 logger.debug("decision context env :{}", headerEnvStr);
                 contextModel.setVdEnv(headerEnvStr);
-                isNeedReject = !headerEnvStr.equals(env);
+                isHitEnv = headerEnvStr.equals(env);
             }
+            if (null != headerVersion) {
+                String headerVersionStr = headerVersion.toString();
+                logger.debug("decision context version :{}", headerVersionStr);
+                String serverStr = String.format("\"%s\"", serverName);
+                String serverVersion = null != version ? String.format("\"%s\":\"%s\"", serverName, version) : null;
+                contextModel.setVdVersion(headerVersionStr);
+                //如果传递的header中未指定当前服务的版本，则判断当前服务版本是否是common
+                if (headerVersionStr.contains(serverStr)) {
+                    if (null != serverVersion) {
+                        isHitVersion = headerVersionStr.contains(serverVersion);
+                    }
+                } else {
+                    isHitVersion = DecisionConstant.COMMON.equals(version);
+                }
+
+            }
+            isNeedReject = !isHitEnv || !isHitVersion;
             if (isNeedReject) {
                 logger.debug("RabbitMq consumer reject message ");
                 channel.basicReject(message.getMessageProperties().getDeliveryTag(), true);
@@ -62,6 +73,7 @@ public class RabbitMqListenerInterceptor implements InstanceAroundInterceptor {
         if (isNeedReject) {
             logger.debug(" end  RabbitMq consumer return after reject ");
             result.defineReturnValue(null);
+            return;
         }
         ServerInfoHolder serverInfo = ServerInfoHolder.getInstance();
         //判断链路信息是否完整，完整的话进行往下传递，并打印调用的服务信息

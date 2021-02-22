@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.decision.core.plugin.common.InterfaceProxyUtils.puppet;
 
@@ -89,6 +90,7 @@ public class RibbonInterceptor implements InstanceAroundInterceptor {
 
     private List<Server> handleHeaderParams(List<Server> servers, String vdVersion, String vdEnv) {
         List<Server> resultServers = new ArrayList<Server>();
+        boolean isHitEnv = false;
         for (Server server : servers) {
             String mateDataVersion = null;
             String mateDataEnv = null;
@@ -108,6 +110,7 @@ public class RibbonInterceptor implements InstanceAroundInterceptor {
             boolean filterFlag = false;
             if (StringUtil.isNotEmpty(vdEnv)) {
                 if (vdEnv.equals(mateDataEnv)) {
+                    isHitEnv = true;
                     filterFlag = isHitVersion(vdVersion, applicationName, mateDataVersion);
                 }
             } else if (StringUtil.isNotEmpty(mateDataEnv) && mateDataEnv.equals(DecisionConstant.COMMON)) {
@@ -116,6 +119,20 @@ public class RibbonInterceptor implements InstanceAroundInterceptor {
             if (filterFlag) {
                 resultServers.add(server);
             }
+        }
+        //当所有服务都未命中所设置的环境时，再一次从common环境中查询是否有命中的服务
+        if (resultServers.size() == 0 && !isHitEnv) {
+            resultServers = servers.stream().filter(server -> {
+                final IServer decisionServer = puppet(
+                        IServer.class,
+                        server
+                );
+                String mateDataVersion = decisionServer.getMetadata().get(DecisionMateData.VERSION);
+                String serviceName = decisionServer.getMetaInfo().getAppName();
+                String mateDataEnv = decisionServer.getMetadata().get(DecisionMateData.ENV);
+                String applicationName = serviceName.substring(serviceName.lastIndexOf("@") + 1);
+                return DecisionConstant.COMMON.equals(mateDataEnv) && isHitVersion(vdVersion, applicationName, mateDataVersion);
+            }).collect(Collectors.toList());
         }
         return resultServers;
     }
