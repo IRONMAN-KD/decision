@@ -22,7 +22,7 @@ public class ThreadPoolPlugin implements DecisionPluginDefine {
     private static final String ENHANCE_EXECUTOR_SERVICE_CLASS = "java.util.concurrent.ExecutorService";
     private static final String ENHANCE_COMPLETION_SERVICE_CLASS = "java.util.concurrent.CompletionService";
     private static final String ENHANCE_FORK_JOIN_CLASS = "java.util.concurrent.ForkJoinPool";
-    private static final String INTERCEPT_THREAD_POOL_CLASS = "com.decision.plugin.thread.interceptor.ForkJoinPoolInterceptor";
+    private static final String INTERCEPT_THREAD_POOL_CLASS = "com.decision.plugin.thread.interceptor.ThreadPoolInterceptor";
 
     @Override
     public PluginInterceptPoint[] getInterceptPoint() {
