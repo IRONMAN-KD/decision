@@ -1,7 +1,9 @@
 package com.decision.core.plugin.context;
 
 
+import com.decision.core.plugin.common.DecisionThreadLocal;
 import com.decision.core.plugin.common.GlobalIdGenerator;
+import com.decision.core.plugin.common.StringUtil;
 
 /**
  * decision 上线文
@@ -10,7 +12,7 @@ import com.decision.core.plugin.common.GlobalIdGenerator;
  * @Date 2020/12/9 16:07
  */
 public class DecisionPluginContext {
-    private static final InheritableThreadLocal<ContextModel> DECISION_CONTEXT = new InheritableThreadLocal<ContextModel>();
+    private static final DecisionThreadLocal<ContextModel> DECISION_CONTEXT = new DecisionThreadLocal<ContextModel>();
     private static final String APPEND_SIGN = "->";
     private static final String VERSION_APPEND_SIGN = ":";
 
@@ -39,7 +41,7 @@ public class DecisionPluginContext {
     }
 
     public static String appendAppNames(String appNames, String curServerName, String curServerVersion) {
-        StringBuilder builder = new StringBuilder(appNames);
+        StringBuilder builder = new StringBuilder(StringUtil.isEmpty(appNames) ? "" : appNames);
         builder.append(APPEND_SIGN)
                 .append(curServerName)
                 .append(VERSION_APPEND_SIGN)

@@ -1,10 +1,10 @@
 package com.decision.plugin.thread.wrapper;
 
 
-import com.decision.core.plugin.context.ContextModel;
-import com.decision.core.plugin.context.DecisionPluginContext;
+import com.decision.core.plugin.common.DecisionThreadLocal;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @Author KD
@@ -13,25 +13,24 @@ import java.util.concurrent.Callable;
 public class DecisionCallableWrapper<T> implements Callable<T> {
     private Callable<T> callable;
 
-    private ContextModel contextModel;
+    private AtomicReference<DecisionThreadLocal.SnapShot> captureRef;
 
-    public DecisionCallableWrapper(Callable<T> callable, ContextModel contextModel) {
+    public DecisionCallableWrapper(Callable<T> callable) {
         this.callable = callable;
-        this.contextModel = contextModel;
+        this.captureRef = new AtomicReference<>(DecisionThreadLocal.Transmitter.capture());
     }
 
     @Override
     public T call() throws Exception {
-        DecisionPluginContext.set(contextModel);
-        return callable.call();
+        DecisionThreadLocal.SnapShot capture = captureRef.get();
+        DecisionThreadLocal.SnapShot backUp = DecisionThreadLocal.Transmitter.replay(capture);
+        T result;
+        try {
+            result = callable.call();
+        } finally {
+            DecisionThreadLocal.Transmitter.restore(backUp);
+        }
+        return result;
     }
 
-    /**
-     * 返回原始的Callable
-     *
-     * @return
-     */
-    public Callable<T> getOrigin() {
-        return callable;
-    }
 }

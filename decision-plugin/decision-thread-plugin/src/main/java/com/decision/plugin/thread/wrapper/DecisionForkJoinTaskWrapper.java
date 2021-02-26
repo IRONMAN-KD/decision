@@ -1,12 +1,12 @@
 package com.decision.plugin.thread.wrapper;
 
+import com.decision.core.plugin.common.DecisionThreadLocal;
 import com.decision.core.plugin.common.InterfaceProxyUtils;
-import com.decision.core.plugin.context.ContextModel;
-import com.decision.core.plugin.context.DecisionPluginContext;
 
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @Author KD
@@ -14,14 +14,14 @@ import java.util.concurrent.ForkJoinTask;
  */
 public class DecisionForkJoinTaskWrapper<V> extends ForkJoinTask<V> {
     private ForkJoinTask<V> task;
-    private ContextModel contextModel;
+    private AtomicReference<DecisionThreadLocal.SnapShot> captureRef;
     private static Method setRawResultMethod;
     private static Method execMethod;
     private static List<Method> taskMethodList;
 
-    public DecisionForkJoinTaskWrapper(ForkJoinTask<V> task, ContextModel contextModel) {
+    public DecisionForkJoinTaskWrapper(ForkJoinTask<V> task) {
         this.task = task;
-        this.contextModel = contextModel;
+        this.captureRef = new AtomicReference<>(DecisionThreadLocal.Transmitter.capture());
     }
 
     @Override
@@ -44,7 +44,8 @@ public class DecisionForkJoinTaskWrapper<V> extends ForkJoinTask<V> {
 
     @Override
     protected boolean exec() {
-        DecisionPluginContext.set(contextModel);
+        DecisionThreadLocal.SnapShot capture = captureRef.get();
+        DecisionThreadLocal.SnapShot backUp = DecisionThreadLocal.Transmitter.replay(capture);
         if (execMethod == null) {
             execMethod = getMethod("exec");
         }
@@ -53,6 +54,8 @@ public class DecisionForkJoinTaskWrapper<V> extends ForkJoinTask<V> {
             return (Boolean) execMethod.invoke(task);
         } catch (Throwable e) {
             throw new RuntimeException("反射执行exec方法失败", e);
+        } finally {
+            DecisionThreadLocal.Transmitter.restore(backUp);
         }
     }
 

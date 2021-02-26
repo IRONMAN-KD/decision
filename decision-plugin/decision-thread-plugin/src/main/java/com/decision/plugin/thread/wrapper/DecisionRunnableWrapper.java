@@ -1,7 +1,9 @@
 package com.decision.plugin.thread.wrapper;
 
+import com.decision.core.plugin.common.DecisionThreadLocal;
 import com.decision.core.plugin.context.ContextModel;
-import com.decision.core.plugin.context.DecisionPluginContext;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @Author KD
@@ -9,25 +11,22 @@ import com.decision.core.plugin.context.DecisionPluginContext;
  */
 public class DecisionRunnableWrapper implements Runnable {
     private Runnable runnable;
-    private ContextModel contextModel;
+    private AtomicReference<DecisionThreadLocal.SnapShot> captureRef;
 
     public DecisionRunnableWrapper(Runnable runnable, ContextModel contextModel) {
         this.runnable = runnable;
-        this.contextModel = contextModel;
+        this.captureRef = new AtomicReference<>(DecisionThreadLocal.Transmitter.capture());
     }
 
     @Override
     public void run() {
-        DecisionPluginContext.set(contextModel);
-        runnable.run();
+        DecisionThreadLocal.SnapShot capture = captureRef.get();
+        DecisionThreadLocal.SnapShot backUp = DecisionThreadLocal.Transmitter.replay(capture);
+        try {
+            runnable.run();
+        } finally {
+            DecisionThreadLocal.Transmitter.restore(backUp);
+        }
     }
 
-    /**
-     * 返回原始的Runnable
-     *
-     * @return
-     */
-    public Runnable getOrigin() {
-        return runnable;
-    }
 }

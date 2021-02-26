@@ -20,13 +20,9 @@ import java.util.concurrent.ForkJoinTask;
 @DecisionPlugin(id = "threadPool", version = "1.0.0", author = "KD")
 public class ThreadPoolPlugin implements DecisionPluginDefine {
     private static final String ENHANCE_EXECUTOR_SERVICE_CLASS = "java.util.concurrent.ExecutorService";
-    private static final String ENHANCE_COMPLETION_SERVICE_CLASS = "java.util.concurrent.ExecutorService";
-    private static final String ENHANCE_THREADPOOL_EXECUTOR_CLASS = "java.util.concurrent.ThreadPoolExecutor";
+    private static final String ENHANCE_COMPLETION_SERVICE_CLASS = "java.util.concurrent.CompletionService";
     private static final String ENHANCE_FORK_JOIN_CLASS = "java.util.concurrent.ForkJoinPool";
-    private static final String INTERCEPT_EXECUTOR_SERVICE_CLASS = "com.decision.plugin.thread.interceptor.ExecutorServiceInterceptor";
-    private static final String INTERCEPT_THREADPOOL_EXECUTOR_BEFORE_CLASS = "com.decision.plugin.thread.interceptor.ThreadPoolExecutorBeforeInterceptor";
-    private static final String INTERCEPT_THREADPOOL_EXECUTOR_AFTER_CLASS = "com.decision.plugin.thread.interceptor.ThreadPoolExecutorAfterInterceptor";
-    private static final String INTERCEPT_FORK_JOIN_CLASS = "com.decision.plugin.thread.interceptor.ForkJoinPoolInterceptor";
+    private static final String INTERCEPT_THREAD_POOL_CLASS = "com.decision.plugin.thread.interceptor.ForkJoinPoolInterceptor";
 
     @Override
     public PluginInterceptPoint[] getInterceptPoint() {
@@ -53,51 +49,7 @@ public class ThreadPoolPlugin implements DecisionPluginDefine {
 
                     @Override
                     public String getMethodInterceptor() {
-                        return INTERCEPT_EXECUTOR_SERVICE_CLASS;
-                    }
-                },
-                new PluginInterceptPoint() {
-                    @Override
-                    public ElementMatcher<TypeDescription> buildTypesMatcher() {
-                        ElementMatcher.Junction<TypeDescription> matcher = ElementMatchers.hasSuperType(ElementMatchers.named(ENHANCE_THREADPOOL_EXECUTOR_CLASS))
-                                .and(ElementMatchers.not(ElementMatchers.<TypeDescription>isAbstract()));
-                        return matcher;
-                    }
-
-                    @Override
-                    public ElementMatcher<MethodDescription> buildMethodsMatcher() {
-                        return ElementMatchers.isMethod()
-                                .and(ElementMatchers.takesArguments(2))
-                                .and(ElementMatchers.takesArgument(0, ElementMatchers.named("java.lang.Thread")))
-                                .and(ElementMatchers.takesArgument(1, ElementMatchers.named("java.lang.Runnable")))
-                                .and(ElementMatchers.<MethodDescription>named("beforeExecute"));
-                    }
-
-                    @Override
-                    public String getMethodInterceptor() {
-                        return INTERCEPT_THREADPOOL_EXECUTOR_BEFORE_CLASS;
-                    }
-                },
-                new PluginInterceptPoint() {
-                    @Override
-                    public ElementMatcher<TypeDescription> buildTypesMatcher() {
-                        ElementMatcher.Junction<TypeDescription> matcher = ElementMatchers.hasSuperType(ElementMatchers.named(ENHANCE_THREADPOOL_EXECUTOR_CLASS))
-                                .and(ElementMatchers.not(ElementMatchers.<TypeDescription>isAbstract()));
-                        return matcher;
-                    }
-
-                    @Override
-                    public ElementMatcher<MethodDescription> buildMethodsMatcher() {
-                        return ElementMatchers.isMethod()
-                                .and(ElementMatchers.takesArguments(2))
-                                .and(ElementMatchers.takesArgument(0, ElementMatchers.named("java.lang.Runnable")))
-                                .and(ElementMatchers.takesArgument(1, ElementMatchers.named("java.lang.Throwable")))
-                                .and(ElementMatchers.<MethodDescription>named("afterExecute"));
-                    }
-
-                    @Override
-                    public String getMethodInterceptor() {
-                        return INTERCEPT_THREADPOOL_EXECUTOR_AFTER_CLASS;
+                        return INTERCEPT_THREAD_POOL_CLASS;
                     }
                 },
                 new PluginInterceptPoint() {
@@ -122,7 +74,7 @@ public class ThreadPoolPlugin implements DecisionPluginDefine {
 
                     @Override
                     public String getMethodInterceptor() {
-                        return INTERCEPT_FORK_JOIN_CLASS;
+                        return INTERCEPT_THREAD_POOL_CLASS;
                     }
                 }
         };

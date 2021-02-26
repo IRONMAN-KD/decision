@@ -16,10 +16,10 @@ import java.util.concurrent.ForkJoinTask;
  * @Author KD
  * @Date 2021/2/3 17:01
  */
-public class ForkJoinPoolInterceptor implements InstanceAroundInterceptor {
+public class ThreadPoolInterceptor implements InstanceAroundInterceptor {
     @Override
     public void before(Object targetObject, Method method, Object[] allArguments, Class<?>[] parameterTypes, MethodInterceptResult result) {
-        Object param = forkJoinPoolHandler(allArguments[0]);
+        Object param = threadPoolHandler(allArguments[0]);
         allArguments[0] = param;
     }
 
@@ -32,7 +32,7 @@ public class ForkJoinPoolInterceptor implements InstanceAroundInterceptor {
     public void handleException(Object targetObject, Method method, Object[] allArguments, Class<?>[] argumentsTypes, Throwable t) {
     }
 
-    public static Object forkJoinPoolHandler(Object param) {
+    public static Object threadPoolHandler(Object param) {
         ContextModel contextModel = DecisionPluginContext.getOrCreate().copy();
         if (param instanceof Runnable) {
             DecisionRunnableWrapper runnable = new DecisionRunnableWrapper((Runnable) param, contextModel);
