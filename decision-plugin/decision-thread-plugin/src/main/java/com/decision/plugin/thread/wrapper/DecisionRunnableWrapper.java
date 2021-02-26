@@ -13,7 +13,7 @@ public class DecisionRunnableWrapper implements Runnable {
     private Runnable runnable;
     private AtomicReference<DecisionThreadLocal.SnapShot> captureRef;
 
-    public DecisionRunnableWrapper(Runnable runnable, ContextModel contextModel) {
+    public DecisionRunnableWrapper(Runnable runnable) {
         this.runnable = runnable;
         this.captureRef = new AtomicReference<>(DecisionThreadLocal.Transmitter.capture());
     }

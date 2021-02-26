@@ -1,7 +1,5 @@
 package com.decision.plugin.thread.interceptor;
 
-import com.decision.core.plugin.context.ContextModel;
-import com.decision.core.plugin.context.DecisionPluginContext;
 import com.decision.core.plugin.interceptor.InstanceAroundInterceptor;
 import com.decision.core.plugin.interceptor.enhance.MethodInterceptResult;
 import com.decision.plugin.thread.wrapper.DecisionCallableWrapper;
@@ -33,17 +31,16 @@ public class ThreadPoolInterceptor implements InstanceAroundInterceptor {
     }
 
     public static Object threadPoolHandler(Object param) {
-        ContextModel contextModel = DecisionPluginContext.getOrCreate().copy();
         if (param instanceof Runnable) {
-            DecisionRunnableWrapper runnable = new DecisionRunnableWrapper((Runnable) param, contextModel);
+            DecisionRunnableWrapper runnable = new DecisionRunnableWrapper((Runnable) param);
             return runnable;
         }
         if (param instanceof Callable) {
-            DecisionCallableWrapper callable = new DecisionCallableWrapper((Callable) param, contextModel);
+            DecisionCallableWrapper callable = new DecisionCallableWrapper((Callable) param);
             return callable;
         }
         if (param instanceof ForkJoinTask) {
-            DecisionForkJoinTaskWrapper task = new DecisionForkJoinTaskWrapper((ForkJoinTask) param, contextModel);
+            DecisionForkJoinTaskWrapper task = new DecisionForkJoinTaskWrapper((ForkJoinTask) param);
             return task;
         }
         return param;
