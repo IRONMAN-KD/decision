@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,11 +29,16 @@ public class RibbonInterceptor implements InstanceAroundInterceptor {
 
     @Override
     public void before(Object targetObject, Method method, Object[] allArguments, Class<?>[] parameterTypes, MethodInterceptResult result) {
+
+    }
+
+    @Override
+    public Object after(Object targetObject, Method method, Object[] allArguments, Object result, Object[] argumentsTypes) {
         ContextModel contextModel = DecisionPluginContext.getOrCreate();
         String vdVersion = contextModel.getVdVersion();
         String vdEnv = contextModel.getVdEnv();
         logger.debug(" begin ribbon loadBalance route ");
-        List<Server> servers = (List<Server>) allArguments[0];
+        List<Server> servers = (List<Server>) result;
         List<Server> resultServers = new ArrayList<Server>();
         if (StringUtil.isEmpty(vdEnv) && StringUtil.isEmpty(vdVersion)) {
             //如果不传参数的话，默认使用common版本进行处理
@@ -47,12 +53,7 @@ public class RibbonInterceptor implements InstanceAroundInterceptor {
         }
         logger.debug(" end ribbon loadBalance route ");
 
-        allArguments[0] = resultServers;
-    }
-
-    @Override
-    public Object after(Object targetObject, Method method, Object[] allArguments, Object result, Object[] argumentsTypes) {
-        return result;
+        return Collections.unmodifiableList(resultServers);
     }
 
     @Override

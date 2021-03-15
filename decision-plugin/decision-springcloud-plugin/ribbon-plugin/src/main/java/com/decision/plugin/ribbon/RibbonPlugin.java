@@ -16,7 +16,7 @@ import org.kohsuke.MetaInfServices;
 @MetaInfServices(DecisionPluginDefine.class)
 @DecisionPlugin(id = "ribbon", version = "1.0.0", author = "KD")
 public class RibbonPlugin implements DecisionPluginDefine {
-    private static final String ENHANCE_CLASS = "com.netflix.loadbalancer.AbstractServerPredicate";
+    private static final String ENHANCE_CLASS = "com.netflix.loadbalancer.BaseLoadBalancer";
     private static final String INTERCEPT_CLASS = "com.decision.plugin.ribbon.interceptor.RibbonInterceptor";
 
     @Override
@@ -33,10 +33,7 @@ public class RibbonPlugin implements DecisionPluginDefine {
                     @Override
                     public ElementMatcher<MethodDescription> buildMethodsMatcher() {
                         return ElementMatchers.isMethod()
-                                .and(ElementMatchers.takesArguments(2))
-                                .and(ElementMatchers.takesArgument(0, ElementMatchers.named("java.util.List")))
-                                .and(ElementMatchers.takesArgument(1, ElementMatchers.named("java.lang.Object")))
-                                .and(ElementMatchers.<MethodDescription>named("getEligibleServers"));
+                                .and(ElementMatchers.<MethodDescription>named("getAllServers"));
                     }
 
                     @Override
