@@ -16,7 +16,8 @@ import org.kohsuke.MetaInfServices;
 @MetaInfServices(DecisionPluginDefine.class)
 @DecisionPlugin(id = "feign", version = "1.0.0", author = "KD")
 public class FeignPlugin implements DecisionPluginDefine {
-    private static final String ENHANCE_CLASS = "org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient";
+    //private static final String ENHANCE_CLASS = "org.springframework.cloud.openfeign.ribbon.LoadBalancerFeignClient";
+    private static final String ENHANCE_CLASS = "feign.Client";
     private static final String INTERCEPT_CLASS = "com.decision.plugin.feign.interceptor.FeignInterceptor";
 
     @Override

@@ -33,6 +33,9 @@ public class RabbitMqListenerInterceptor implements InstanceAroundInterceptor {
         Object traceId = message.getMessageProperties().getHeaders().get(HeaderKey.TID);
         Object parentId = message.getMessageProperties().getHeaders().get(HeaderKey.PID);
         Object appNames = message.getMessageProperties().getHeaders().get(HeaderKey.APP_NAMES);
+        if (null == headerEnv && null == headerVersion) {
+            return;
+        }
         ContextModel contextModel = DecisionPluginContext.getOrCreate();
         try {
             ServerInfoHolder serverInfoHolder = ServerInfoHolder.getInstance();
