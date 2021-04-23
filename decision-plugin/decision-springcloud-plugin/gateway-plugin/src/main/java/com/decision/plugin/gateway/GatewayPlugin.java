@@ -16,7 +16,7 @@ import org.kohsuke.MetaInfServices;
 @MetaInfServices(DecisionPluginDefine.class)
 @DecisionPlugin(id = "gateway", version = "1.0.0", author = "KD")
 public class GatewayPlugin implements DecisionPluginDefine {
-    private static final String ENHANCE_CLASS = "org.springframework.web.reactive.DispatcherHandler";
+    private static final String ENHANCE_CLASS = "org.springframework.cloud.gateway.filter.LoadBalancerClientFilter";
     private static final String INTERCEPT_CLASS = "com.decision.plugin.gateway.interceptor.GatewayInterceptor";
 
     @Override
@@ -35,7 +35,7 @@ public class GatewayPlugin implements DecisionPluginDefine {
                         return ElementMatchers.isMethod()
                                 .and(ElementMatchers.takesArguments(1))
                                 .and(ElementMatchers.takesArgument(0, ElementMatchers.named("org.springframework.web.server.ServerWebExchange")))
-                                .and(ElementMatchers.<MethodDescription>named("handle"));
+                                .and(ElementMatchers.<MethodDescription>named("filter"));
                     }
 
                     @Override

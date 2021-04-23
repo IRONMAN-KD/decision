@@ -15,18 +15,12 @@ import java.util.Map;
 public class HeaderInfoInterceptor implements InstanceAroundInterceptor {
     @Override
     public void before(Object targetObject, Method method, Object[] allArguments, Class<?>[] parameterTypes, MethodInterceptResult result) {
-        HeaderConfigHolder headerConfigHolder = HeaderConfigHolder.getInstance();
-        Map<String, Object> config = (Map<String, Object>) allArguments[0];
-        if (null == headerConfigHolder.getVersion() || headerConfigHolder.getVersion().size() == 0) {
-            setHeaderConfig(config, true, false);
-        }
-        if (null == headerConfigHolder.getEnv() || headerConfigHolder.getEnv().size() == 0) {
-            setHeaderConfig(config, false, true);
-        }
+        handleFirstTime(allArguments[0]);
     }
 
     @Override
     public Object after(Object targetObject, Method method, Object[] allArguments, Object result, Object[] argumentsTypes) {
+        handleChange(result);
         return result;
     }
 
@@ -35,7 +29,23 @@ public class HeaderInfoInterceptor implements InstanceAroundInterceptor {
 
     }
 
-    private void setHeaderConfig(Map<String, Object> configs, Boolean isSetVersion, Boolean isSetEnv) {
+    public void handleFirstTime(Object argument) {
+        HeaderConfigHolder headerConfigHolder = HeaderConfigHolder.getInstance();
+        Map<String, Object> config = (Map<String, Object>) argument;
+        if (null == headerConfigHolder.getVersion() || headerConfigHolder.getVersion().size() == 0) {
+            setHeaderConfig(config, true, false);
+        }
+        if (null == headerConfigHolder.getEnv() || headerConfigHolder.getEnv().size() == 0) {
+            setHeaderConfig(config, false, true);
+        }
+    }
+
+    public void handleChange(Object argument) {
+        Map<String, Object> changedConfig = (Map<String, Object>) argument;
+        setHeaderConfig(changedConfig, true, true);
+    }
+
+    public void setHeaderConfig(Map<String, Object> configs, Boolean isSetVersion, Boolean isSetEnv) {
         HeaderConfigHolder headerConfigHolder = HeaderConfigHolder.getInstance();
         for (String configKey : configs.keySet()) {
             if (configKey.contains(DecisionConstant.DECISION_HEADER_VERSION) && isSetVersion) {
