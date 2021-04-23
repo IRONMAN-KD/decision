@@ -12,7 +12,8 @@ decision是基于开源的字节码框架bytebuddy开发的环境治理工具，
 ### 源码
 - github：https://github.com/IRONMAN-KD/decision
 - 码云：https://gitee.com/lkd_java/decision
-
+### 相关文章
+- https://blog.csdn.net/lishe9452/article/details/114782061?spm=1001.2014.3001.5501
 ### 工程架构
 #### 架构核心
 ![总体路由策略](https://images.gitee.com/uploads/images/2021/0220/162333_67c01b44_687406.png "总体架构.png")
