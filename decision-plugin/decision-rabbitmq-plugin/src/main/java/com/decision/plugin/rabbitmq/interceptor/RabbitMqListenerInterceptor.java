@@ -47,6 +47,8 @@ public class RabbitMqListenerInterceptor implements InstanceAroundInterceptor {
                 logger.debug("decision context env :{}", headerEnvStr);
                 contextModel.setVdEnv(headerEnvStr);
                 isHitEnv = headerEnvStr.equals(env);
+            } else {
+                isHitEnv = DecisionConstant.COMMON.equals(env);
             }
             if (null != headerVersion) {
                 String headerVersionStr = headerVersion.toString();
