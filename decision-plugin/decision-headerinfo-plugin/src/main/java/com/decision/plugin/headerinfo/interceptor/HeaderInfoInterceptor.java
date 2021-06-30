@@ -4,8 +4,12 @@ import com.decision.core.plugin.constant.DecisionConstant;
 import com.decision.core.plugin.context.HeaderConfigHolder;
 import com.decision.core.plugin.interceptor.InstanceAroundInterceptor;
 import com.decision.core.plugin.interceptor.enhance.MethodInterceptResult;
+import org.apache.commons.lang3.StringUtils;
+import org.yaml.snakeyaml.Yaml;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -13,9 +17,10 @@ import java.util.Map;
  * @Date 2021/2/8 14:26
  */
 public class HeaderInfoInterceptor implements InstanceAroundInterceptor {
+    private static final String DOT = ".";
+
     @Override
     public void before(Object targetObject, Method method, Object[] allArguments, Class<?>[] parameterTypes, MethodInterceptResult result) {
-        handleFirstTime(allArguments[0]);
     }
 
     @Override
@@ -29,34 +34,100 @@ public class HeaderInfoInterceptor implements InstanceAroundInterceptor {
 
     }
 
-    public void handleFirstTime(Object argument) {
-        HeaderConfigHolder headerConfigHolder = HeaderConfigHolder.getInstance();
-        Map<String, Object> config = (Map<String, Object>) argument;
-        if (null == headerConfigHolder.getVersion() || headerConfigHolder.getVersion().size() == 0) {
-            setHeaderConfig(config, true, false);
-        }
-        if (null == headerConfigHolder.getEnv() || headerConfigHolder.getEnv().size() == 0) {
-            setHeaderConfig(config, false, true);
-        }
-    }
-
     public void handleChange(Object argument) {
-        Map<String, Object> changedConfig = (Map<String, Object>) argument;
-        setHeaderConfig(changedConfig, true, true);
+        String configStr = "";
+        //兼容高低版本
+        if (argument instanceof String[]) {
+            String[] configArray = (String[]) argument;
+            configStr = configArray[0];
+        } else {
+            configStr = (String) argument;
+        }
+        Yaml yaml = new Yaml();
+        //获取yml文件
+        if (StringUtils.isNotEmpty(configStr)) {
+            Map<String, Object> config = yaml.load(configStr);
+            if (null != config && config.containsKey(DecisionConstant.DECISION)) {
+                setHeaderConfigByYaml(config);
+            }
+        }
     }
 
-    public void setHeaderConfig(Map<String, Object> configs, Boolean isSetVersion, Boolean isSetEnv) {
-        HeaderConfigHolder headerConfigHolder = HeaderConfigHolder.getInstance();
-        for (String configKey : configs.keySet()) {
-            if (configKey.contains(DecisionConstant.DECISION_HEADER_VERSION) && isSetVersion) {
-                Map<String, String> versions = headerConfigHolder.getVersion();
-                String hostKey = configKey.substring(DecisionConstant.DECISION_HEADER_VERSION.length() + 4);
-                versions.put(hostKey, null == configs.get(configKey) ? null : configs.get(configKey).toString());
+    /**
+     * 配置header
+     *
+     * @param yamlConfig
+     */
+    private void setHeaderConfigByYaml(Map<String, Object> yamlConfig) {
+        Map<String, Object> versionConfig = new HashMap<>();
+        forEachYaml(DecisionConstant.DECISION, (Map<String, Object>) yamlConfig.get(DecisionConstant.DECISION), versionConfig, 1, DecisionConstant.DECISION_HEADER_VERSION.split(DOT));
+        if (versionConfig.size() > 0) {
+            setHeaderConfig(versionConfig, true);
+        }
+        Map<String, Object> envConfig = new HashMap<>();
+        forEachYaml(DecisionConstant.DECISION, (Map<String, Object>) yamlConfig.get(DecisionConstant.DECISION), versionConfig, 1, DecisionConstant.DECISION_HEADER_ENV.split(DOT));
+        if (envConfig.size() > 0) {
+            setHeaderConfig(envConfig, false);
+        }
+    }
+
+    /**
+     * 处理yml文件
+     *
+     * @param key_str
+     * @param obj
+     * @param result
+     * @param i
+     * @param keys
+     * @return
+     */
+    private Map<String, Object> forEachYaml(String key_str, Map<String, Object> obj, Map<String, Object> result, int i, String[] keys) {
+        for (Map.Entry<String, Object> entry : obj.entrySet()) {
+            String key = entry.getKey();
+            Object val = entry.getValue();
+            if (keys.length > i && !keys[i].equals(key)) {
+                continue;
             }
-            if (configKey.contains(DecisionConstant.DECISION_HEADER_ENV) && isSetEnv) {
-                Map<String, String> envs = headerConfigHolder.getEnv();
-                String hostKey = configKey.substring(DecisionConstant.DECISION_HEADER_ENV.length() + 4);
-                envs.put(hostKey, null == configs.get(configKey) ? null : configs.get(configKey).toString());
+            String str_new = "";
+            if (StringUtils.isNotEmpty(key_str)) {
+                str_new = key_str + "." + key;
+            } else {
+                str_new = key;
+            }
+            if (val instanceof Map) {
+                forEachYaml(str_new, (Map<String, Object>) val, result, ++i, keys);
+                i--;
+            } else if (val instanceof List) {
+                List<Map<String, String>> list = (List<Map<String, String>>) val;
+                result.put(str_new, list);
+            }
+        }
+
+        return result;
+    }
+
+    private void setHeaderConfig(Map<String, Object> configs, boolean isVersion) {
+        HeaderConfigHolder headerConfigHolder = HeaderConfigHolder.getInstance();
+        Map<String, String> versions = headerConfigHolder.getVersion();
+        Map<String, String> envs = headerConfigHolder.getEnv();
+        for (String configKey : configs.keySet()) {
+            if (configKey.equals(DecisionConstant.DECISION_HEADER_VERSION) || configKey.equals(DecisionConstant.DECISION_HEADER_ENV)) {
+                //变更时先清空版本映射信息，再全量设置
+                if (isVersion) {
+                    versions.clear();
+                } else {
+                    envs.clear();
+                }
+
+                List<Map<String, String>> list = (List<Map<String, String>>) configs.get(configKey);
+                for (Map<String, String> map : list) {
+                    if (isVersion) {
+                        versions.putAll(map);
+                    } else {
+                        envs.putAll(map);
+                    }
+
+                }
             }
         }
     }

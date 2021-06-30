@@ -16,11 +16,8 @@ import org.kohsuke.MetaInfServices;
 @MetaInfServices(DecisionPluginDefine.class)
 @DecisionPlugin(id = "headerInfo", version = "1.0.0", author = "KD")
 public class HeaderInfoPlugin implements DecisionPluginDefine {
-    private static final String ENHANCE_CLASS = "org.springframework.cloud.context.refresh.ContextRefresher";
-    private static final String NACOS_ENHANCE_CLASS_OF_ALIBABA = "com.alibaba.cloud.nacos.client.NacosPropertySourceBuilder";
-    private static final String NACOS_ENHANCE_CLASS_OF_SPRING_CLOUD = "org.springframework.cloud.alibaba.nacos.client.NacosPropertySourceBuilder";
+    private static final String ENHANCE_CLASS = "com.alibaba.nacos.client.config.impl.ClientWorker";
     private static final String INTERCEPT_CLASS = "com.decision.plugin.headerinfo.interceptor.HeaderInfoInterceptor";
-    private static final String NACOS_INTERCEPT_CLASS = "com.decision.plugin.headerinfo.interceptor.NacosHeaderInfoInterceptor";
 
     @Override
     public PluginInterceptPoint[] getInterceptPoint() {
@@ -36,59 +33,12 @@ public class HeaderInfoPlugin implements DecisionPluginDefine {
                     @Override
                     public ElementMatcher<MethodDescription> buildMethodsMatcher() {
                         return ElementMatchers.isMethod()
-                                .and(ElementMatchers.takesArguments(2))
-                                .and(ElementMatchers.takesArgument(0, ElementMatchers.named("java.util.Map")))
-                                .and(ElementMatchers.takesArgument(1, ElementMatchers.named("java.util.Map")))
-                                .and(ElementMatchers.<MethodDescription>named("changes"));
+                                .and(ElementMatchers.<MethodDescription>named("getServerConfig"));
                     }
 
                     @Override
                     public String getMethodInterceptor() {
                         return INTERCEPT_CLASS;
-                    }
-                },
-                new PluginInterceptPoint() {
-                    @Override
-                    public ElementMatcher<TypeDescription> buildTypesMatcher() {
-                        ElementMatcher.Junction<TypeDescription> matcher = ElementMatchers.hasSuperType(ElementMatchers.named(NACOS_ENHANCE_CLASS_OF_ALIBABA))
-                                .and(ElementMatchers.not(ElementMatchers.<TypeDescription>isAbstract()));
-                        return matcher;
-                    }
-
-                    @Override
-                    public ElementMatcher<MethodDescription> buildMethodsMatcher() {
-                        return ElementMatchers.isMethod()
-                                .and(ElementMatchers.takesArguments(2))
-                                .and(ElementMatchers.takesArgument(0, ElementMatchers.named("java.util.Map")))
-                                .and(ElementMatchers.takesArgument(1, ElementMatchers.named("java.util.Map")))
-                                .and(ElementMatchers.<MethodDescription>named("loadNacosData"));
-                    }
-
-                    @Override
-                    public String getMethodInterceptor() {
-                        return NACOS_INTERCEPT_CLASS;
-                    }
-                },
-                new PluginInterceptPoint() {
-                    @Override
-                    public ElementMatcher<TypeDescription> buildTypesMatcher() {
-                        ElementMatcher.Junction<TypeDescription> matcher = ElementMatchers.hasSuperType(ElementMatchers.named(NACOS_ENHANCE_CLASS_OF_SPRING_CLOUD))
-                                .and(ElementMatchers.not(ElementMatchers.<TypeDescription>isAbstract()));
-                        return matcher;
-                    }
-
-                    @Override
-                    public ElementMatcher<MethodDescription> buildMethodsMatcher() {
-                        return ElementMatchers.isMethod()
-                                .and(ElementMatchers.takesArguments(2))
-                                .and(ElementMatchers.takesArgument(0, ElementMatchers.named("java.util.Map")))
-                                .and(ElementMatchers.takesArgument(1, ElementMatchers.named("java.util.Map")))
-                                .and(ElementMatchers.<MethodDescription>named("loadNacosData"));
-                    }
-
-                    @Override
-                    public String getMethodInterceptor() {
-                        return NACOS_INTERCEPT_CLASS;
                     }
                 }
         };
